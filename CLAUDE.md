@@ -114,8 +114,23 @@ Without this, Next.js may cache the page and serve stale data instead of fresh S
 - All `.env` files are in `.gitignore`
 
 ### Production (Vercel)
-- All env vars set via Vercel Dashboard → Project Settings → Environment Variables
+- **ALWAYS use Vercel CLI** (`vercel`) for all Vercel operations — never the dashboard
+- CLI is installed globally: `vercel --version`
+- Auth token stored at `%APPDATA%/com.vercel.cli/Data/auth.json`
+- Login: `vercel login` (opens browser)
+- Env vars: `vercel env add KEY production` or via Vercel REST API
+- Deploy storefront: `cd <repo-root> && vercel link --project gdf-storefront && vercel --prod`
+- Deploy admin: `cd <repo-root> && vercel link --project gdf-admin && vercel --prod`
 - Never hardcode keys in source files
+
+#### Vercel Project Config
+| Project | Vercel URL | Build Command | Output Dir |
+|---------|-----------|---------------|------------|
+| `gdf-storefront` | https://gdf-storefront.vercel.app | `npm run build --workspace=@apps/storefront` | `apps/storefront/.next` |
+| `gdf-admin` | https://gdf-admin.vercel.app | `npm run build --workspace=@apps/admin` | `apps/admin/.next` |
+
+Both projects build from **repo root** (not the app subdirectory) so npm workspaces can resolve `@packages/types`.
+Team ID: `team_PShJguBRgoIO4oWTH3DdWYbS`
 
 ### Supabase Edge Functions
 - Secrets set via: `npx supabase secrets set KEY=value`
