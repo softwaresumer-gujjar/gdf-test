@@ -30,7 +30,8 @@ export default function LoginPage() {
       setError(authError.message);
       setLoading(false);
     } else {
-      router.push(nextPath);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.push(nextPath as any);
       router.refresh();
     }
   }
