@@ -45,8 +45,8 @@ export default async function HomePage() {
       {/* Announcement bar */}
       <div className="bg-primary text-primary-foreground text-center text-xs py-2 px-4 font-sans">
         Home delivery available — WhatsApp us at{' '}
-        <a href="https://wa.me/923110068226" target="_blank" rel="noreferrer" className="underline font-bold">
-          +92 311 0068226
+        <a href="https://wa.me/923113111111" target="_blank" rel="noreferrer" className="underline font-bold">
+          +92 311 3111111
         </a>
       </div>
 
@@ -56,7 +56,7 @@ export default async function HomePage() {
           <h2 className="text-lg font-bold text-primary tracking-tight">Gujjar Dairy Farmers</h2>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" asChild>
-              <a href="tel:+923110068226">+92 311 0068226</a>
+              <a href="tel:+923113111111">+92 311 3111111</a>
             </Button>
             {userEmail ? (
               <>
@@ -86,7 +86,7 @@ export default async function HomePage() {
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">DO YOU WANT TO GET PURE MILK?</h1>
         <p className="text-lg opacity-80 mb-8">IF YES! COME TO US...</p>
         <Button variant="outline" size="lg" className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" asChild>
-          <a href="tel:+923110068226">CALL US NOW</a>
+          <a href="tel:+923113111111">CALL US NOW</a>
         </Button>
       </section>
 
