@@ -16,8 +16,8 @@ export function SalesLineChart({ data }: { data: { date: string; revenue: number
           tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
         <Tooltip
           contentStyle={{ borderRadius: 10, border: '1px solid #EAECF0', fontSize: 12 }}
-          formatter={(v: number, name: string) => [
-            name === 'revenue' ? `PKR ${v.toLocaleString()}` : v,
+          formatter={(v, name) => [
+            name === 'revenue' ? `PKR ${Number(v).toLocaleString()}` : v,
             name === 'revenue' ? 'Revenue' : 'Orders'
           ]}
         />
