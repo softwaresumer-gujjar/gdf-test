@@ -59,12 +59,12 @@ export default async function DashboardPage() {
   const targetPct = thisMonth / MONTHLY_TARGET;
   const recentOrders = safeOrders.slice(0, 6);
 
-  const metrics = [
+  const metrics: { label: string; value: string; trend: 'up' | 'down' | 'neutral'; badge: string }[] = [
     { label: 'Total Revenue', value: `PKR ${totalRevenue.toLocaleString()}`, trend: 'up', badge: '+12%' },
     { label: 'Total Orders', value: String(safeOrders.length), trend: 'up', badge: '+8%' },
     { label: 'Total Customers', value: String(totalCustomers ?? 0), trend: 'up', badge: '+5%' },
     { label: 'Pending Delivery', value: String(pendingDelivery), trend: 'neutral', badge: pendingDelivery > 10 ? 'High' : 'Normal' },
-  ] as const;
+  ];
 
   return (
     <div className="space-y-6">
