@@ -39,7 +39,7 @@ export function RevenueBarChart({ data }: { data: { month: string; revenue: numb
           tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
         <Tooltip
           contentStyle={{ borderRadius: 10, border: '1px solid #EAECF0', fontSize: 12 }}
-          formatter={(v: number) => [`PKR ${v.toLocaleString()}`, 'Revenue']}
+          formatter={(v) => [`PKR ${Number(v).toLocaleString()}`, 'Revenue']}
         />
         <Bar dataKey="revenue" fill="#00C9A7" radius={[6, 6, 0, 0]} />
       </BarChart>
@@ -65,7 +65,7 @@ export function OrderDonut({ data }: { data: { name: string; value: number }[] }
         </Pie>
         <Tooltip
           contentStyle={{ borderRadius: 10, border: '1px solid #EAECF0', fontSize: 12 }}
-          formatter={(v: number, name: string) => [v, name]}
+          formatter={(v, name) => [v, name]}
         />
         <Legend iconType="circle" iconSize={8}
           formatter={(v) => <span style={{ fontSize: 12, color: '#8C8C9E', textTransform: 'capitalize' }}>{v}</span>}
