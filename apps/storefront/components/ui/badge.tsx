@@ -10,7 +10,7 @@ const badgeVariants = cva(
         default: 'bg-accent text-accent-foreground border border-accent-foreground/20',
         secondary: 'bg-secondary text-secondary-foreground',
         outline: 'border border-border text-foreground',
-        pill: 'bg-[#eef6ea] border border-[#d9e9d2] text-primary',
+        pill: 'bg-[#e8f1fb] border border-[#c3d8f4] text-primary',
         pending: 'bg-amber-100 text-amber-800',
         paid: 'bg-emerald-100 text-emerald-800',
         dispatched: 'bg-blue-100 text-blue-800',

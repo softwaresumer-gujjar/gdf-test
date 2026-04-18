@@ -5,23 +5,26 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 
+/* Brand blue: #1875D1 */
+const BRAND_BLUE = '#1875D1';
+
 /* ── Sales Line Chart ────────────────────────────────────── */
 export function SalesLineChart({ data }: { data: { date: string; revenue: number; orders: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height={220}>
       <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F5" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#E8EEF7" />
         <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#8C8C9E' }} tickLine={false} axisLine={false} />
         <YAxis tick={{ fontSize: 11, fill: '#8C8C9E' }} tickLine={false} axisLine={false}
           tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
         <Tooltip
-          contentStyle={{ borderRadius: 10, border: '1px solid #EAECF0', fontSize: 12 }}
+          contentStyle={{ borderRadius: 10, border: '1px solid #D0DFF0', fontSize: 12 }}
           formatter={(v, name) => [
             name === 'revenue' ? `PKR ${Number(v).toLocaleString()}` : v,
             name === 'revenue' ? 'Revenue' : 'Orders'
           ]}
         />
-        <Line type="monotone" dataKey="revenue" stroke="#00C9A7" strokeWidth={2.5} dot={false} />
+        <Line type="monotone" dataKey="revenue" stroke={BRAND_BLUE} strokeWidth={2.5} dot={false} />
         <Line type="monotone" dataKey="orders"  stroke="#F59E0B" strokeWidth={2}   dot={false} />
       </LineChart>
     </ResponsiveContainer>
@@ -33,15 +36,15 @@ export function RevenueBarChart({ data }: { data: { month: string; revenue: numb
   return (
     <ResponsiveContainer width="100%" height={220}>
       <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F5" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#E8EEF7" vertical={false} />
         <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#8C8C9E' }} tickLine={false} axisLine={false} />
         <YAxis tick={{ fontSize: 11, fill: '#8C8C9E' }} tickLine={false} axisLine={false}
           tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
         <Tooltip
-          contentStyle={{ borderRadius: 10, border: '1px solid #EAECF0', fontSize: 12 }}
+          contentStyle={{ borderRadius: 10, border: '1px solid #D0DFF0', fontSize: 12 }}
           formatter={(v) => [`PKR ${Number(v).toLocaleString()}`, 'Revenue']}
         />
-        <Bar dataKey="revenue" fill="#00C9A7" radius={[6, 6, 0, 0]} />
+        <Bar dataKey="revenue" fill={BRAND_BLUE} radius={[6, 6, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -49,7 +52,7 @@ export function RevenueBarChart({ data }: { data: { month: string; revenue: numb
 
 /* ── Order Status Donut ──────────────────────────────────── */
 const STATUS_COLORS: Record<string, string> = {
-  pending: '#F59E0B', paid: '#00C9A7', dispatched: '#3B82F6',
+  pending: '#F59E0B', paid: '#1875D1', dispatched: '#6366F1',
   delivered: '#10B981', cancelled: '#EF4444',
 };
 
@@ -64,7 +67,7 @@ export function OrderDonut({ data }: { data: { name: string; value: number }[] }
           ))}
         </Pie>
         <Tooltip
-          contentStyle={{ borderRadius: 10, border: '1px solid #EAECF0', fontSize: 12 }}
+          contentStyle={{ borderRadius: 10, border: '1px solid #D0DFF0', fontSize: 12 }}
           formatter={(v, name) => [v, name]}
         />
         <Legend iconType="circle" iconSize={8}
@@ -82,8 +85,8 @@ export function SalesTargetGauge({ pct }: { pct: number }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
       <svg width="160" height="160" viewBox="0 0 160 160">
-        <circle cx="80" cy="80" r={r} fill="none" stroke="#F0F0F5" strokeWidth="14" />
-        <circle cx="80" cy="80" r={r} fill="none" stroke="#00C9A7" strokeWidth="14"
+        <circle cx="80" cy="80" r={r} fill="none" stroke="#E8EEF7" strokeWidth="14" />
+        <circle cx="80" cy="80" r={r} fill="none" stroke={BRAND_BLUE} strokeWidth="14"
           strokeDasharray={circ} strokeDashoffset={offset}
           strokeLinecap="round" transform="rotate(-90 80 80)" />
         <text x="80" y="76" textAnchor="middle" fontSize="22" fontWeight="700" fill="#1C1D22">{Math.round(pct * 100)}%</text>
