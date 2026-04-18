@@ -13,7 +13,7 @@ export function AddToCartButton({ product }: Props) {
 
   return (
     <Button size="sm" onClick={() => {
-      const existingRaw = window.localStorage.getItem('milkman_cart');
+      const existingRaw = window.localStorage.getItem('gdf_cart');
       const existing = existingRaw ? JSON.parse(existingRaw) as Array<{ productId: string; quantity: number }> : [];
 
       const found = existing.find((i) => i.productId === product.id);
@@ -23,7 +23,7 @@ export function AddToCartButton({ product }: Props) {
         existing.push({ productId: product.id, quantity: 1 });
       }
 
-      window.localStorage.setItem('milkman_cart', JSON.stringify(existing));
+      window.localStorage.setItem('gdf_cart', JSON.stringify(existing));
       router.push('/checkout');
     }}>
       Add to cart

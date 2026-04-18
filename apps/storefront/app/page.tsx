@@ -53,7 +53,7 @@ export default async function HomePage() {
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <h2 className="text-lg font-bold text-primary tracking-tight">Pure Dairy Farmers</h2>
+          <h2 className="text-lg font-bold text-primary tracking-tight">Gujjar Dairy Farmers</h2>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" asChild>
               <a href="tel:+923110068226">+92 311 0068226</a>
@@ -151,7 +151,7 @@ export default async function HomePage() {
           {' · '}
           <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Instagram</a>
         </p>
-        <p className="text-xs text-muted-foreground mt-4">Copyright © 2026 Pure Dairy Farmers — All Rights Reserved.</p>
+        <p className="text-xs text-muted-foreground mt-4">Copyright © 2026 Gujjar Dairy Farmers — All Rights Reserved.</p>
       </footer>
     </main>
   );

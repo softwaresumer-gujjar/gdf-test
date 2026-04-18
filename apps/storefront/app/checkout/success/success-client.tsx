@@ -7,7 +7,7 @@ import { CheckCircle } from 'lucide-react';
 
 export function SuccessClient({ amount, orderId, sessionId }: { amount?: string; orderId?: string; sessionId?: string }) {
   useEffect(() => {
-    window.localStorage.removeItem('milkman_cart');
+    window.localStorage.removeItem('gdf_cart');
   }, []);
 
   return (

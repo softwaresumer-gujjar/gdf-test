@@ -53,7 +53,7 @@ export function CheckoutClient() {
   async function onCheckout() {
     setLoading(true); setError(null);
     try {
-      const itemsRaw = window.localStorage.getItem('milkman_cart');
+      const itemsRaw = window.localStorage.getItem('gdf_cart');
       const items = itemsRaw
         ? (JSON.parse(itemsRaw) as CartItem[]).map(item => ({
             ...item, productId: legacyProductIdMap[item.productId] ?? item.productId

@@ -45,7 +45,7 @@ function LoginForm() {
         <CardContent className="p-7">
           <div className="text-center mb-7">
             <h1 className="text-2xl font-bold text-primary">Sign in</h1>
-            <p className="text-sm text-muted-foreground mt-1">Welcome back to Pure Dairy Farmers</p>
+            <p className="text-sm text-muted-foreground mt-1">Welcome back to Gujjar Dairy Farmers</p>
           </div>
 
           {error && (

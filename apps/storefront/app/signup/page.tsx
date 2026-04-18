@@ -61,7 +61,7 @@ export default function SignupPage() {
         <CardContent className="p-7">
           <div className="text-center mb-7">
             <h1 className="text-2xl font-bold text-primary">Create account</h1>
-            <p className="text-sm text-muted-foreground mt-1">Join Pure Dairy Farmers</p>
+            <p className="text-sm text-muted-foreground mt-1">Join Gujjar Dairy Farmers</p>
           </div>
 
           {error && (
