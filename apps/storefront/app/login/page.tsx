@@ -30,8 +30,7 @@ function LoginForm() {
       setError(authError.message);
       setLoading(false);
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      router.push(nextPath as any);
+      router.push(nextPath);
       router.refresh();
     }
   }
