@@ -36,10 +36,8 @@ export default function Sidebar() {
     <aside className="w-[220px] min-h-screen bg-card border-r border-border flex flex-col py-5 px-3 sticky top-0 shrink-0">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-2 mb-6">
-        <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-lg shrink-0">
-          G
-        </div>
-        <span className="font-black text-[17px] tracking-tight text-foreground">GDF</span>
+        <img src="/logo.svg" alt="Gujjar Dairy Farmers" className="w-10 h-10 rounded-xl shrink-0" />
+        <span className="font-black text-[15px] tracking-tight text-foreground leading-tight">Gujjar Dairy<br/><span className="text-primary font-semibold text-[11px]">Admin Panel</span></span>
       </div>
 
       {/* Nav */}

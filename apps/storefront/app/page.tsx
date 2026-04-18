@@ -53,7 +53,7 @@ export default async function HomePage() {
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <h2 className="text-lg font-bold text-primary tracking-tight">Gujjar Dairy Farmers</h2>
+          <img src="/logo.svg" alt="Gujjar Dairy Farmers" className="h-10 w-10 rounded-xl" />
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" asChild>
               <a href="tel:+923113111111">+92 311 3111111</a>

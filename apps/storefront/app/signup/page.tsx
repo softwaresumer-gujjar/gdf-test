@@ -60,6 +60,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-sm">
         <CardContent className="p-7">
           <div className="text-center mb-7">
+            <img src="/logo.svg" alt="Gujjar Dairy Farmers" className="h-16 w-16 rounded-2xl mx-auto mb-3" />
             <h1 className="text-2xl font-bold text-primary">Create account</h1>
             <p className="text-sm text-muted-foreground mt-1">Join Gujjar Dairy Farmers</p>
           </div>

@@ -8,7 +8,7 @@ export default function CancelledPage() {
     <main className="min-h-screen bg-background flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <Link href="/" className="text-primary font-bold text-lg">Gujjar Dairy Farmers</Link>
+          <Link href="/"><img src="/logo.svg" alt="Gujjar Dairy Farmers" className="h-10 w-10 rounded-xl mx-auto" /></Link>
         </div>
         <Card>
           <CardContent className="p-8 text-center">

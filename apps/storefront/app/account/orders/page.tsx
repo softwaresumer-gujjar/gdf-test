@@ -24,7 +24,7 @@ export default async function AccountOrdersPage() {
     <main className="min-h-screen bg-background">
       <header className="bg-card border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="text-primary font-bold text-lg">Gujjar Dairy Farmers</Link>
+          <Link href="/"><img src="/logo.svg" alt="Gujjar Dairy Farmers" className="h-9 w-9 rounded-xl" /></Link>
           <Button variant="outline" size="sm" asChild>
             <Link href="/">← Back to shop</Link>
           </Button>

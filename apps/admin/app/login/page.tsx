@@ -66,9 +66,7 @@ function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
       <Card className="w-full max-w-[420px] shadow-lg">
         <CardHeader className="items-center text-center pb-2">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-2xl mb-3">
-            G
-          </div>
+          <img src="/logo.svg" alt="Gujjar Dairy Farmers" className="h-16 w-16 rounded-2xl mb-2" />
           <h1 className="text-xl font-bold">GDF Admin</h1>
           <p className="text-sm text-muted-foreground mt-1">Sign in to your admin account</p>
         </CardHeader>
