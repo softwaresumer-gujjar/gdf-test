@@ -2,17 +2,21 @@
 
 import { useState } from 'react';
 import { createClient } from '../../lib/supabase/client';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
-type Product = { id: string; name: string; category: string; stock_count: number; in_stock: boolean; price_pkr: number; image_url: string | null; };
+type Product = { id: string; name: string; category: string; stock_count: number; in_stock: boolean; price_pkr: number; image_url: string | null };
 
 export default function InventoryClient({ initialProducts }: { initialProducts: Product[] }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [editing, setEditing] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState<string | null>(null);
 
-  const low  = products.filter(p => p.stock_count > 0 && p.stock_count <= 10);
-  const out  = products.filter(p => p.stock_count === 0);
-  const fine = products.filter(p => p.stock_count > 10);
+  const low = products.filter(p => p.stock_count > 0 && p.stock_count <= 10);
+  const out = products.filter(p => p.stock_count === 0);
 
   async function saveStock(id: string) {
     const val = editing[id]; if (val === undefined) return;
@@ -24,68 +28,78 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
     setSaving(null);
   }
 
-  function stockBadge(count: number) {
-    if (count === 0) return <span className="badge badge--out">Out of Stock</span>;
-    if (count <= 10) return <span className="badge badge--low">Low Stock</span>;
-    return <span className="badge badge--active">In Stock</span>;
-  }
+  const metrics = [
+    { label: 'Total Products', value: products.length, accent: '' },
+    { label: 'Low Stock', value: low.length, accent: 'border-l-4 border-l-amber-400' },
+    { label: 'Out of Stock', value: out.length, accent: 'border-l-4 border-l-red-400' },
+  ];
 
   return (
-    <div>
-      <div className="page-header">
-        <div><h1>Inventory</h1><p className="page-header__sub">Manage stock levels</p></div>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Inventory</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Manage stock levels</p>
       </div>
 
-      <div className="card-grid card-grid--3" style={{ marginBottom: 24 }}>
-        <div className="card metric-card"><p className="metric-card__label">Total Products</p><p className="metric-card__value">{products.length}</p></div>
-        <div className="card metric-card" style={{ borderLeft: '3px solid var(--warning)' }}>
-          <p className="metric-card__label">Low Stock</p><p className="metric-card__value">{low.length}</p>
-        </div>
-        <div className="card metric-card" style={{ borderLeft: '3px solid var(--danger)' }}>
-          <p className="metric-card__label">Out of Stock</p><p className="metric-card__value">{out.length}</p>
-        </div>
+      <div className="grid grid-cols-3 gap-4">
+        {metrics.map(m => (
+          <Card key={m.label} className={m.accent}>
+            <CardContent className="p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">{m.label}</p>
+              <p className="text-2xl font-bold tracking-tight">{m.value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="card">
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Update Stock</th></tr></thead>
-            <tbody>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow><TableHead>Product</TableHead><TableHead>Category</TableHead><TableHead>Price</TableHead><TableHead>Stock</TableHead><TableHead>Status</TableHead><TableHead>Update Stock</TableHead></TableRow>
+            </TableHeader>
+            <TableBody>
               {products.map(p => (
-                <tr key={p.id}>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--bg)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {p.image_url ? <img src={p.image_url} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>🥛</span>}
+                <TableRow key={p.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-lg bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                        {p.image_url ? <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" /> : <span>🥛</span>}
                       </div>
-                      <span style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</span>
+                      <span className="font-semibold text-[13px]">{p.name}</span>
                     </div>
-                  </td>
-                  <td>{p.category ?? 'Milk'}</td>
-                  <td style={{ fontWeight: 600 }}>PKR {p.price_pkr.toLocaleString()}</td>
-                  <td style={{ fontWeight: 700, color: p.stock_count === 0 ? 'var(--danger)' : p.stock_count <= 10 ? 'var(--warning)' : 'var(--text)' }}>
+                  </TableCell>
+                  <TableCell className="text-[13px]">{p.category ?? 'Milk'}</TableCell>
+                  <TableCell className="font-semibold text-[13px]">PKR {p.price_pkr.toLocaleString()}</TableCell>
+                  <TableCell className={`font-bold text-[13px] ${p.stock_count === 0 ? 'text-destructive' : p.stock_count <= 10 ? 'text-amber-600' : ''}`}>
                     {p.stock_count}
-                  </td>
-                  <td>{stockBadge(p.stock_count)}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <input type="number" min={0} value={editing[p.id] ?? p.stock_count}
-                        onChange={e => setEditing(prev => ({ ...prev, [p.id]: Number(e.target.value) }))}
-                        style={{ width: 70, padding: '4px 8px', fontSize: 13 }} />
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={p.stock_count === 0 ? 'out' : p.stock_count <= 10 ? 'low' : 'active'}>
+                      {p.stock_count === 0 ? 'Out of Stock' : p.stock_count <= 10 ? 'Low Stock' : 'In Stock'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Input type="number" min={0} className="w-20 h-7 text-xs"
+                        value={editing[p.id] ?? p.stock_count}
+                        onChange={e => setEditing(prev => ({ ...prev, [p.id]: Number(e.target.value) }))} />
                       {editing[p.id] !== undefined && editing[p.id] !== p.stock_count && (
-                        <button className="button button--sm" onClick={() => void saveStock(p.id)} disabled={saving === p.id}>
+                        <Button size="sm" className="h-7 text-xs" onClick={() => void saveStock(p.id)} disabled={saving === p.id}>
                           {saving === p.id ? '…' : 'Save'}
-                        </button>
+                        </Button>
                       )}
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-              {products.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--muted)', padding: 32 }}>No products.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              {products.length === 0 && (
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No products.</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

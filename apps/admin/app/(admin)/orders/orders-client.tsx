@@ -2,8 +2,16 @@
 
 import { useState } from 'react';
 import { createClient } from '../../lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { Search } from 'lucide-react';
 
-type OrderItem = { id: string; product_name: string; quantity: number; unit_price_pkr: number; };
+type OrderItem = { id: string; product_name: string; quantity: number; unit_price_pkr: number };
 type Order = {
   id: string; customer_email: string; location_id: string | null;
   status: string; total_pkr: number | null; created_at: string;
@@ -21,8 +29,7 @@ export default function OrdersClient({ initialOrders }: { initialOrders: Order[]
 
   const filtered = orders.filter(o => {
     const matchStatus = filter === 'all' || o.status === filter;
-    const matchSearch = o.customer_email.toLowerCase().includes(search.toLowerCase()) ||
-      o.id.includes(search);
+    const matchSearch = o.customer_email.toLowerCase().includes(search.toLowerCase()) || o.id.includes(search);
     return matchStatus && matchSearch;
   });
 
@@ -38,117 +45,113 @@ export default function OrdersClient({ initialOrders }: { initialOrders: Order[]
   }
 
   return (
-    <div>
-      <div className="page-header">
-        <div><h1>Orders</h1><p className="page-header__sub">{orders.length} total orders</p></div>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">{orders.length} total orders</p>
       </div>
 
-      {/* Filters */}
-      <div className="toolbar">
-        <div className="search-wrap">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" placeholder="Search by email or ID…" value={search} onChange={e => setSearch(e.target.value)} />
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative max-w-xs flex-1 min-w-[180px]">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Search by email or ID…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="filter-buttons">
+        <div className="flex gap-1.5 flex-wrap">
           {['all', ...STATUSES].map(s => (
-            <button type="button" key={s}
-              className={`button button--sm filter-btn ${filter === s ? '' : 'button--secondary'}`}
-              onClick={() => setFilter(s)}>
+            <Button key={s} size="sm" variant={filter === s ? 'default' : 'outline'}
+              onClick={() => setFilter(s)} className="capitalize">
               {s}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
 
-      <div className="card">
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Order ID</th><th>Customer</th><th>Location</th><th>Status</th><th>Amount</th><th>Date</th><th>Actions</th></tr></thead>
-            <tbody>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow><TableHead>Order ID</TableHead><TableHead>Customer</TableHead><TableHead>Location</TableHead><TableHead>Status</TableHead><TableHead>Amount</TableHead><TableHead>Date</TableHead><TableHead>Actions</TableHead></TableRow>
+            </TableHeader>
+            <TableBody>
               {filtered.map(o => (
-                <tr key={o.id}>
-                  <td>
-                    <span className="orders-table__id" onClick={() => setSelected(o)}>
+                <TableRow key={o.id}>
+                  <TableCell>
+                    <span className="font-mono text-xs text-primary cursor-pointer hover:underline" onClick={() => setSelected(o)}>
                       {o.id.slice(0, 8)}
                     </span>
-                  </td>
-                  <td>{o.customer_email}</td>
-                  <td className="orders-table__muted">{o.location_id ?? '—'}</td>
-                  <td><span className={`badge badge--${o.status}`}>{o.status}</span></td>
-                  <td className="orders-table__amount">PKR {(o.total_pkr ?? 0).toLocaleString()}</td>
-                  <td className="orders-table__date">{new Date(o.created_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                  <td>
-                    <select
-                      aria-label="Update order status"
-                      className="orders-table__select"
-                      value={o.status}
-                      disabled={updating === o.id}
-                      onChange={e => void updateStatus(o.id, e.target.value)}
-                    >
+                  </TableCell>
+                  <TableCell className="text-[13px]">{o.customer_email}</TableCell>
+                  <TableCell className="text-muted-foreground text-[13px]">{o.location_id ?? '—'}</TableCell>
+                  <TableCell><Badge variant={o.status as 'pending' | 'paid' | 'dispatched' | 'delivered' | 'cancelled'}>{o.status}</Badge></TableCell>
+                  <TableCell className="font-semibold text-[13px]">PKR {(o.total_pkr ?? 0).toLocaleString()}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs">{new Date(o.created_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })}</TableCell>
+                  <TableCell>
+                    <select title="Update order status"
+                      className="h-7 rounded-md border border-input bg-card px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      value={o.status} disabled={updating === o.id}
+                      onChange={e => void updateStatus(o.id, e.target.value)}>
                       {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="orders-table__empty">No orders found.</td></tr>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No orders found.</TableCell></TableRow>
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-      {/* Order detail modal */}
-      {selected && (
-        <div className="modal-backdrop" onClick={() => setSelected(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal__header">
-              <h2 className="modal__title">Order #{selected.id.slice(0, 8)}</h2>
-              <button type="button" aria-label="Close" className="modal__close" onClick={() => setSelected(null)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-            <div className="order-detail-grid">
-              {([
-                ['Customer', selected.customer_email, false],
-                ['Location', selected.location_id ?? '—', false],
-                ['Status', selected.status, true],
-                ['Total', `PKR ${(selected.total_pkr ?? 0).toLocaleString()}`, false],
-                ['Date', new Date(selected.created_at).toLocaleString('en-PK'), false],
-              ] as [string, string, boolean][]).map(([k, v, capitalize]) => (
-                <div key={k} className="order-detail-row">
-                  <span className="order-detail-key">{k}</span>
-                  <span className={`order-detail-val${capitalize ? ' order-detail-val--capitalize' : ''}`}>{v}</span>
-                </div>
-              ))}
-            </div>
-            {selected.order_items?.length > 0 && (
-              <>
-                <p className="order-items-title">Items</p>
-                {selected.order_items.map(item => (
-                  <div key={item.id} className="order-item-row">
-                    <span>{item.product_name} × {item.quantity}</span>
-                    <span className="order-item-price">PKR {(item.unit_price_pkr * item.quantity).toLocaleString()}</span>
+      {/* Order detail dialog */}
+      <Dialog open={!!selected} onOpenChange={open => !open && setSelected(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Order #{selected?.id.slice(0, 8)}</DialogTitle>
+          </DialogHeader>
+          {selected && (
+            <>
+              <div className="grid gap-0">
+                {([
+                  ['Customer', selected.customer_email],
+                  ['Location', selected.location_id ?? '—'],
+                  ['Status', selected.status],
+                  ['Total', `PKR ${(selected.total_pkr ?? 0).toLocaleString()}`],
+                  ['Date', new Date(selected.created_at).toLocaleString('en-PK')],
+                ] as [string, string][]).map(([k, v]) => (
+                  <div key={k} className="flex justify-between py-2 border-b border-border last:border-0">
+                    <span className="text-sm text-muted-foreground">{k}</span>
+                    <span className="text-sm font-semibold capitalize">{v}</span>
                   </div>
                 ))}
-              </>
-            )}
-            <div className="modal__footer">
-              <label className="modal__footer-label">
-                <span className="modal__footer-label-text">Update status:</span>
-                <select
-                  aria-label="Update order status"
-                  className="orders-table__select"
-                  value={selected.status}
-                  onChange={e => void updateStatus(selected.id, e.target.value)}
-                >
+              </div>
+              {selected.order_items?.length > 0 && (
+                <>
+                  <Separator />
+                  <p className="text-sm font-bold">Items</p>
+                  <div className="grid gap-1">
+                    {selected.order_items.map(item => (
+                      <div key={item.id} className="flex justify-between text-sm py-1">
+                        <span>{item.product_name} × {item.quantity}</span>
+                        <span className="font-semibold">PKR {(item.unit_price_pkr * item.quantity).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              <DialogFooter className="items-center">
+                <span className="text-sm text-muted-foreground mr-auto">Update status:</span>
+                <select title="Update order status"
+                  className="h-8 rounded-md border border-input bg-card px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={selected.status} onChange={e => void updateStatus(selected.id, e.target.value)}>
                   {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-              </label>
-            </div>
-          </div>
-        </div>
-      )}
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

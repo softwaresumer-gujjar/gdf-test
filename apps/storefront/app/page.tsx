@@ -3,6 +3,9 @@ import type { LocationOption, Product } from '@packages/types';
 import { AddToCartButton } from './ui/add-to-cart-button';
 import { fallbackLocations, fallbackProducts } from './lib/fallback-data';
 import { createClient } from './lib/supabase/server';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -39,99 +42,116 @@ export default async function HomePage() {
 
   return (
     <main>
-      <div className="top-announcement">
-        If you want home delivery service WhatsApp at{' '}
-        <a href="https://wa.me/923110068226" target="_blank" rel="noreferrer">+92 311 0068226</a>
+      {/* Announcement bar */}
+      <div className="bg-primary text-primary-foreground text-center text-xs py-2 px-4 font-sans">
+        Home delivery available — WhatsApp us at{' '}
+        <a href="https://wa.me/923110068226" target="_blank" rel="noreferrer" className="underline font-bold">
+          +92 311 0068226
+        </a>
       </div>
 
-      <header className="brand-header">
-        <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 className="brand-title">Pure Dairy Farmers</h2>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <a href="tel:+923110068226" className="button secondary">+92 311 0068226</a>
+      {/* Header */}
+      <header className="bg-card border-b border-border sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          <h2 className="text-lg font-bold text-primary tracking-tight">Pure Dairy Farmers</h2>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <a href="tel:+923110068226">+92 311 0068226</a>
+            </Button>
             {userEmail ? (
               <>
-                <Link href="/account/orders" className="button secondary">My Orders</Link>
-                <Link href="/checkout" className="button">Cart / Checkout</Link>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/account/orders">My Orders</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/checkout">Cart / Checkout</Link>
+                </Button>
               </>
             ) : (
               <>
-                <Link href="/login" className="button secondary">Sign in</Link>
-                <Link href="/checkout" className="button">Cart / Checkout</Link>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/login">Sign in</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/checkout">Cart / Checkout</Link>
+                </Button>
               </>
             )}
           </div>
         </div>
       </header>
 
-      <section className="hero">
-        <div className="container center">
-          <h1>DO YOU WANT TO GET PURE MILK?</h1>
-          <p>IF YES! COME TO US...</p>
-          <div style={{ marginTop: 18 }}>
-            <a className="button" href="tel:+923110068226">LEARN MORE</a>
-          </div>
-        </div>
+      {/* Hero */}
+      <section className="bg-primary text-primary-foreground py-20 text-center px-4">
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">DO YOU WANT TO GET PURE MILK?</h1>
+        <p className="text-lg opacity-80 mb-8">IF YES! COME TO US...</p>
+        <Button variant="outline" size="lg" className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" asChild>
+          <a href="tel:+923110068226">CALL US NOW</a>
+        </Button>
       </section>
 
-      <section className="container center">
-        <h2 className="section-title">Our Core Products</h2>
-        <div className="three-col" style={{ marginTop: 10 }}>
-          <div className="card" style={{ padding: 16 }}>
-            <h3 style={{ margin: 0 }}>Fresh Milk</h3>
-          </div>
-          <div className="card" style={{ padding: 16 }}>
-            <h3 style={{ margin: 0 }}>Yogurt</h3>
-          </div>
-          <div className="card" style={{ padding: 16 }}>
-            <h3 style={{ margin: 0 }}>Lassi</h3>
-          </div>
-        </div>
-      </section>
-
-      <section className="container" style={{ display: 'grid', gap: 12 }}>
-        <h2 className="section-title">Select your order type</h2>
-        <div className="card" style={{ padding: 16 }}>
-          <strong>DELIVERY</strong>
-        </div>
-
-        <h2 className="section-title">Please select your location</h2>
-        <div className="card" style={{ padding: 16, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          {locations.map((location) => (
-            <span key={location.id} className="pill">
-              {location.city} - {location.area}
-            </span>
+      {/* Core products */}
+      <section className="max-w-5xl mx-auto px-4 py-12">
+        <h2 className="text-2xl font-bold text-center mb-8">Our Core Products</h2>
+        <div className="grid grid-cols-3 gap-4">
+          {['Fresh Milk', 'Yogurt', 'Lassi'].map(name => (
+            <Card key={name}>
+              <CardContent className="p-5 text-center">
+                <p className="font-bold text-primary text-lg">{name}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </section>
 
-      <section className="container" style={{ display: 'grid', gap: 14 }}>
-        <h2 className="section-title">Featured products</h2>
-        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-          {products.map((product) => (
-            <article className="card" key={product.id} style={{ padding: 14 }}>
-              <img src={product.imageUrl} alt={product.name} style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 10 }} />
-              <h3 style={{ marginBottom: 8 }}>{product.name}</h3>
-              <p className="muted" style={{ marginTop: 0 }}>{product.description}</p>
-              <strong>PKR {product.pricePkr}</strong>
-              <div style={{ marginTop: 12 }}>
-                <AddToCartButton product={product} />
+      {/* Locations */}
+      <section className="max-w-5xl mx-auto px-4 pb-10">
+        <h2 className="text-xl font-bold mb-4">Delivery Locations</h2>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex flex-wrap gap-2">
+              {locations.map(location => (
+                <Badge key={location.id} variant="pill">
+                  {location.city} — {location.area}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Products */}
+      <section className="max-w-5xl mx-auto px-4 pb-16">
+        <h2 className="text-xl font-bold mb-6">Featured Products</h2>
+        <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
+          {products.map(product => (
+            <Card key={product.id}>
+              <div className="overflow-hidden rounded-t-xl">
+                <img src={product.imageUrl} alt={product.name}
+                  className="w-full h-44 object-cover" />
               </div>
-            </article>
+              <CardContent className="p-4">
+                <h3 className="font-bold text-[15px] mb-1">{product.name}</h3>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-primary">PKR {product.pricePkr}</span>
+                  <AddToCartButton product={product} />
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </section>
 
-      <footer className="brand-header" style={{ marginTop: 30 }}>
-        <div className="container center" style={{ paddingTop: 26, paddingBottom: 26 }}>
-          <h3 style={{ margin: 0, color: '#1f5a35' }}>SOCIAL</h3>
-          <p className="muted" style={{ marginTop: 8 }}>
-            <a href="https://www.facebook.com/" target="_blank" rel="noreferrer">Facebook</a>
-            {' • '}
-            <a href="https://www.instagram.com/" target="_blank" rel="noreferrer">Instagram</a>
-          </p>
-          <p className="muted" style={{ marginBottom: 0 }}>Copyright © 2026 Pure Dairy Farmers - All Rights Reserved.</p>
-        </div>
+      {/* Footer */}
+      <footer className="bg-card border-t border-border py-10 text-center">
+        <h3 className="font-bold text-primary mb-2">Follow Us</h3>
+        <p className="text-sm text-muted-foreground">
+          <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Facebook</a>
+          {' · '}
+          <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Instagram</a>
+        </p>
+        <p className="text-xs text-muted-foreground mt-4">Copyright © 2026 Pure Dairy Farmers — All Rights Reserved.</p>
       </footer>
     </main>
   );

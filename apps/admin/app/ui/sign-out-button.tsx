@@ -2,6 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { createClient } from '../lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 
 export function SignOutButton() {
   const router = useRouter();
@@ -14,12 +16,9 @@ export function SignOutButton() {
   }
 
   return (
-    <button
-      className="button secondary"
-      style={{ fontSize: 13 }}
-      onClick={() => { void signOut(); }}
-    >
+    <Button variant="outline" size="sm" onClick={() => { void signOut(); }}>
+      <LogOut size={14} />
       Sign out
-    </button>
+    </Button>
   );
 }

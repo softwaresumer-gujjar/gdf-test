@@ -32,3 +32,4 @@ pnpm-lock.yaml
 test-*.mjs
 playwright-report/
 test-results/
+.vercel

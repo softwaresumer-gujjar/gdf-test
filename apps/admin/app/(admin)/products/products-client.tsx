@@ -2,6 +2,14 @@
 
 import { useState } from 'react';
 import { createClient } from '../../lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Search, Plus, AlertCircle } from 'lucide-react';
 
 type Product = {
   id: string; name: string; slug: string; description: string | null;
@@ -39,9 +47,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
   }
 
   async function save() {
-    if (!form.name || !form.slug || form.price_pkr <= 0) {
-      setError('Name, slug and price are required.'); return;
-    }
+    if (!form.name || !form.slug || form.price_pkr <= 0) { setError('Name, slug and price are required.'); return; }
     setSaving(true); setError(null);
     const sb = createClient();
     if (modal === 'add') {
@@ -63,98 +69,114 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
     setProducts(prev => prev.filter(p => p.id !== id));
   }
 
+  const f = (k: keyof typeof form, v: string | number | boolean) => setForm(prev => ({ ...prev, [k]: v }));
+
   return (
-    <div>
-      <div className="page-header">
-        <div><h1>Products</h1><p className="page-header__sub">{products.length} products</p></div>
-        <button className="button" onClick={openAdd}>+ Add Product</button>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Products</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{products.length} products</p>
+        </div>
+        <Button onClick={openAdd}><Plus size={16} />Add Product</Button>
       </div>
 
-      <div className="card">
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-          <div className="search-wrap">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" placeholder="Search products…" value={search} onChange={e => setSearch(e.target.value)} />
+      <Card>
+        <div className="px-4 py-3 border-b border-border">
+          <div className="relative max-w-xs">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input className="pl-8" placeholder="Search products…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow><TableHead>Product</TableHead><TableHead>Category</TableHead><TableHead>Price</TableHead><TableHead>Stock</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow>
+            </TableHeader>
+            <TableBody>
               {filtered.map(p => (
-                <tr key={p.id}>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--bg)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {p.image_url ? <img src={p.image_url} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>🥛</span>}
+                <TableRow key={p.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-lg bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                        {p.image_url ? <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" /> : <span>🥛</span>}
                       </div>
                       <div>
-                        <p style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</p>
-                        <p style={{ fontSize: 11, color: 'var(--muted)' }}>{p.slug}</p>
+                        <p className="font-semibold text-[13px]">{p.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{p.slug}</p>
                       </div>
                     </div>
-                  </td>
-                  <td>{p.category ?? 'Milk'}</td>
-                  <td style={{ fontWeight: 600 }}>PKR {p.price_pkr.toLocaleString()}</td>
-                  <td>{p.stock_count ?? 0}</td>
-                  <td><span className={`badge ${p.in_stock ? 'badge--active' : 'badge--inactive'}`}>{p.in_stock ? 'In Stock' : 'Out of Stock'}</span></td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="button button--sm button--secondary" onClick={() => openEdit(p)}>Edit</button>
-                      <button className="button button--sm button--danger" onClick={() => void del(p.id)}>Del</button>
+                  </TableCell>
+                  <TableCell className="text-[13px]">{p.category ?? 'Milk'}</TableCell>
+                  <TableCell className="font-semibold text-[13px]">PKR {p.price_pkr.toLocaleString()}</TableCell>
+                  <TableCell className="text-[13px]">{p.stock_count ?? 0}</TableCell>
+                  <TableCell><Badge variant={p.in_stock ? 'active' : 'inactive'}>{p.in_stock ? 'In Stock' : 'Out of Stock'}</Badge></TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => openEdit(p)}>Edit</Button>
+                      <Button variant="destructive" size="sm" onClick={() => void del(p.id)}>Del</Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--muted)', padding: 32 }}>No products found.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              {filtered.length === 0 && (
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No products found.</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-      {/* Modal */}
-      {modal && (
-        <div className="modal-backdrop" onClick={() => setModal(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal__header">
-              <h2 className="modal__title">{modal === 'add' ? 'Add Product' : 'Edit Product'}</h2>
-              <button className="modal__close" onClick={() => setModal(null)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+      <Dialog open={!!modal} onOpenChange={open => !open && setModal(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{modal === 'add' ? 'Add Product' : 'Edit Product'}</DialogTitle>
+          </DialogHeader>
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg bg-destructive/10 text-destructive px-3 py-2.5 text-sm">
+              <AlertCircle size={14} className="mt-0.5 shrink-0" />{error}
             </div>
-            {error && <div className="auth-page__alert auth-page__alert--error" style={{ marginBottom: 16 }}>{error}</div>}
-            <div className="form-grid">
-              <div className="form-grid--2">
-                <label>Name<input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></label>
-                <label>Slug<input type="text" value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} /></label>
-              </div>
-              <label>Description<textarea value={form.description ?? ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></label>
-              <div className="form-grid--2">
-                <label>Price (PKR)<input type="number" value={form.price_pkr} onChange={e => setForm(f => ({ ...f, price_pkr: Number(e.target.value) }))} /></label>
-                <label>Stock Count<input type="number" value={form.stock_count} onChange={e => setForm(f => ({ ...f, stock_count: Number(e.target.value) }))} /></label>
-              </div>
-              <div className="form-grid--2">
-                <label>Category
-                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-                    {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-                  </select>
-                </label>
-                <label>Status
-                  <select value={form.in_stock ? 'true' : 'false'} onChange={e => setForm(f => ({ ...f, in_stock: e.target.value === 'true' }))}>
-                    <option value="true">In Stock</option>
-                    <option value="false">Out of Stock</option>
-                  </select>
-                </label>
-              </div>
-              <label>Image URL<input type="url" value={form.image_url ?? ''} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} /></label>
+          )}
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5"><Label>Name</Label><Input value={form.name} onChange={e => f('name', e.target.value)} /></div>
+              <div className="grid gap-1.5"><Label>Slug</Label><Input value={form.slug} onChange={e => f('slug', e.target.value)} /></div>
             </div>
-            <div className="modal__footer">
-              <button className="button button--secondary" onClick={() => setModal(null)}>Cancel</button>
-              <button className="button" onClick={() => void save()} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+            <div className="grid gap-1.5">
+              <Label>Description</Label>
+              <textarea title="Description" placeholder="Product description…"
+                className="flex min-h-[72px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={form.description ?? ''} onChange={e => f('description', e.target.value)} />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5"><Label>Price (PKR)</Label><Input type="number" value={form.price_pkr} onChange={e => f('price_pkr', Number(e.target.value))} /></div>
+              <div className="grid gap-1.5"><Label>Stock Count</Label><Input type="number" value={form.stock_count} onChange={e => f('stock_count', Number(e.target.value))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label>Category</Label>
+                <select title="Category" className="flex h-9 w-full rounded-lg border border-input bg-card px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={form.category} onChange={e => f('category', e.target.value)}>
+                  {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Status</Label>
+                <select title="Status" className="flex h-9 w-full rounded-lg border border-input bg-card px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={form.in_stock ? 'true' : 'false'} onChange={e => f('in_stock', e.target.value === 'true')}>
+                  <option value="true">In Stock</option>
+                  <option value="false">Out of Stock</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid gap-1.5"><Label>Image URL</Label><Input type="url" value={form.image_url ?? ''} onChange={e => f('image_url', e.target.value)} /></div>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModal(null)}>Cancel</Button>
+            <Button onClick={() => void save()} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

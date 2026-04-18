@@ -2,6 +2,14 @@
 
 import { useState } from 'react';
 import { createClient } from '../../lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertCircle, Plus, Tag } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type Offer = {
   id: string; title: string; description: string | null;
@@ -22,7 +30,7 @@ export default function OffersClient({ initialOffers }: { initialOffers: Offer[]
   function openAdd() { setForm(EMPTY); setEditId(null); setError(null); setModal('add'); }
   function openEdit(o: Offer) {
     setForm({ title: o.title, description: o.description ?? '', discount_percentage: o.discount_percentage,
-      code: o.code ?? '', active: o.active, stock_limit: o.stock_limit?.toString() ?? '', expires_at: o.expires_at?.slice(0,10) ?? '' });
+      code: o.code ?? '', active: o.active, stock_limit: o.stock_limit?.toString() ?? '', expires_at: o.expires_at?.slice(0, 10) ?? '' });
     setEditId(o.id); setError(null); setModal('edit');
   }
 
@@ -62,96 +70,109 @@ export default function OffersClient({ initialOffers }: { initialOffers: Offer[]
     setOffers(prev => prev.filter(o => o.id !== id));
   }
 
+  const f = <K extends keyof typeof EMPTY>(k: K, v: typeof EMPTY[K]) => setForm(prev => ({ ...prev, [k]: v }));
+
   return (
-    <div>
-      <div className="page-header">
-        <div><h1>Offers</h1><p className="page-header__sub">{offers.length} offers</p></div>
-        <button className="button" onClick={openAdd}>+ New Offer</button>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Offers</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{offers.length} offers</p>
+        </div>
+        <Button onClick={openAdd}><Plus size={16} />New Offer</Button>
       </div>
 
-      <div className="card-grid card-grid--3" style={{ marginBottom: 24 }}>
+      <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Total Offers', value: offers.length },
           { label: 'Active', value: offers.filter(o => o.active).length },
           { label: 'Total Used', value: offers.reduce((s, o) => s + o.used_count, 0) },
         ].map(({ label, value }) => (
-          <div key={label} className="card metric-card">
-            <p className="metric-card__label">{label}</p>
-            <p className="metric-card__value">{value}</p>
-          </div>
+          <Card key={label}>
+            <CardContent className="p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">{label}</p>
+              <p className="text-2xl font-bold tracking-tight">{value}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      <div style={{ display: 'grid', grid: 'auto / repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
         {offers.map(o => (
-          <div key={o.id} className="card" style={{ padding: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-              <div>
-                <p style={{ fontWeight: 700, fontSize: 15 }}>{o.title}</p>
-                {o.description && <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{o.description}</p>}
+          <Card key={o.id}>
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <p className="font-bold text-[15px]">{o.title}</p>
+                  {o.description && <p className="text-xs text-muted-foreground mt-0.5">{o.description}</p>}
+                </div>
+                <Badge variant={o.active ? 'active' : 'inactive'}>{o.active ? 'Active' : 'Off'}</Badge>
               </div>
-              <span className={`badge ${o.active ? 'badge--active' : 'badge--inactive'}`}>{o.active ? 'Active' : 'Off'}</span>
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-              <span style={{ background: 'var(--green-light)', color: 'var(--green)', padding: '4px 10px', borderRadius: 20, fontSize: 13, fontWeight: 700 }}>
-                {o.discount_percentage}% OFF
-              </span>
-              {o.code && <span style={{ background: 'var(--bg)', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontFamily: 'monospace', fontWeight: 700 }}>{o.code}</span>}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14 }}>
-              Used: {o.used_count}{o.stock_limit ? ` / ${o.stock_limit}` : ''}
-              {o.expires_at && ` · Expires ${new Date(o.expires_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}`}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="button button--sm button--secondary" onClick={() => openEdit(o)}>Edit</button>
-              <button className="button button--sm button--secondary" onClick={() => void toggleActive(o.id, o.active)}>
-                {o.active ? 'Deactivate' : 'Activate'}
-              </button>
-              <button className="button button--sm button--danger" onClick={() => void del(o.id)}>Delete</button>
-            </div>
-          </div>
+              <div className="flex gap-2 flex-wrap mb-3">
+                <span className="bg-accent text-accent-foreground px-2.5 py-1 rounded-full text-xs font-bold">{o.discount_percentage}% OFF</span>
+                {o.code && <span className="bg-muted px-2.5 py-1 rounded-full text-xs font-mono font-bold">{o.code}</span>}
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                Used: {o.used_count}{o.stock_limit ? ` / ${o.stock_limit}` : ''}
+                {o.expires_at && ` · Expires ${new Date(o.expires_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}`}
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => openEdit(o)}>Edit</Button>
+                <Button variant="outline" size="sm" onClick={() => void toggleActive(o.id, o.active)}>
+                  {o.active ? 'Deactivate' : 'Activate'}
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => void del(o.id)}>Delete</Button>
+              </div>
+            </CardContent>
+          </Card>
         ))}
         {offers.length === 0 && (
-          <div className="card empty-state" style={{ gridColumn: '1/-1' }}>
-            <div className="empty-state__icon">🏷️</div>
-            <p>No offers yet. Create your first discount!</p>
-          </div>
+          <Card className="col-span-full">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Tag size={40} className="mb-3 opacity-30" />
+              <p className="text-sm">No offers yet. Create your first discount!</p>
+            </CardContent>
+          </Card>
         )}
       </div>
 
-      {modal && (
-        <div className="modal-backdrop" onClick={() => setModal(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal__header">
-              <h2 className="modal__title">{modal === 'add' ? 'New Offer' : 'Edit Offer'}</h2>
-              <button className="modal__close" onClick={() => setModal(null)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+      <Dialog open={!!modal} onOpenChange={open => !open && setModal(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{modal === 'add' ? 'New Offer' : 'Edit Offer'}</DialogTitle>
+          </DialogHeader>
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg bg-destructive/10 text-destructive px-3 py-2.5 text-sm">
+              <AlertCircle size={14} className="mt-0.5 shrink-0" />{error}
             </div>
-            {error && <div className="auth-page__alert auth-page__alert--error" style={{ marginBottom: 16 }}>{error}</div>}
-            <div className="form-grid">
-              <label>Title<input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></label>
-              <label>Description<textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></label>
-              <div className="form-grid--2">
-                <label>Discount %<input type="number" min={1} max={100} value={form.discount_percentage} onChange={e => setForm(f => ({ ...f, discount_percentage: Number(e.target.value) }))} /></label>
-                <label>Coupon Code<input type="text" placeholder="e.g. SAVE20" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} /></label>
-              </div>
-              <div className="form-grid--2">
-                <label>Stock Limit<input type="number" placeholder="Unlimited" value={form.stock_limit} onChange={e => setForm(f => ({ ...f, stock_limit: e.target.value }))} /></label>
-                <label>Expires At<input type="date" value={form.expires_at} onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))} /></label>
-              </div>
-              <label style={{ flexDirection: 'row', alignItems: 'center', gap: 10, display: 'flex' }}>
-                <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} style={{ width: 'auto' }} />
-                Active
-              </label>
+          )}
+          <div className="grid gap-4">
+            <div className="grid gap-1.5"><Label>Title</Label><Input value={form.title} onChange={e => f('title', e.target.value)} /></div>
+            <div className="grid gap-1.5">
+              <Label>Description</Label>
+              <textarea title="Description" placeholder="Optional description…"
+                className="flex min-h-[60px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={form.description} onChange={e => f('description', e.target.value)} />
             </div>
-            <div className="modal__footer">
-              <button className="button button--secondary" onClick={() => setModal(null)}>Cancel</button>
-              <button className="button" onClick={() => void save()} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5"><Label>Discount %</Label><Input type="number" min={1} max={100} value={form.discount_percentage} onChange={e => f('discount_percentage', Number(e.target.value))} /></div>
+              <div className="grid gap-1.5"><Label>Coupon Code</Label><Input placeholder="e.g. SAVE20" value={form.code} onChange={e => f('code', e.target.value.toUpperCase())} /></div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5"><Label>Stock Limit</Label><Input type="number" placeholder="Unlimited" value={form.stock_limit} onChange={e => f('stock_limit', e.target.value)} /></div>
+              <div className="grid gap-1.5"><Label>Expires At</Label><Input type="date" value={form.expires_at} onChange={e => f('expires_at', e.target.value)} /></div>
+            </div>
+            <label className={cn('flex items-center gap-2 cursor-pointer text-sm font-medium')}>
+              <input type="checkbox" checked={form.active} onChange={e => f('active', e.target.checked)} className="rounded" />
+              Active
+            </label>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModal(null)}>Cancel</Button>
+            <Button onClick={() => void save()} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -5,19 +5,17 @@ import Link from 'next/link';
 import type { LocationOption } from '@packages/types';
 import { fallbackLocations } from '../../lib/fallback-data';
 import { createClient } from '../../lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertCircle } from 'lucide-react';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
-type CartItem = {
-  productId: string;
-  quantity: number;
-};
+type CartItem = { productId: string; quantity: number; };
 
-const legacyProductIdMap: Record<string, string> = {
-  fp1: 'p1',
-  fp2: 'p2',
-  fp3: 'p3'
-};
+const legacyProductIdMap: Record<string, string> = { fp1: 'p1', fp2: 'p2', fp3: 'p3' };
 
 export function CheckoutClient() {
   const [email, setEmail] = useState('customer@example.com');
@@ -30,59 +28,38 @@ export function CheckoutClient() {
   useEffect(() => {
     const supabase = createClient();
     void supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email) {
-        setEmail(user.email);
-        setUserSignedIn(true);
-      }
+      if (user?.email) { setEmail(user.email); setUserSignedIn(true); }
     });
   }, []);
 
   useEffect(() => {
     let mounted = true;
-
     async function loadLocations() {
       try {
         const response = await fetch(`${apiUrl}/locations`);
         if (!response.ok) return;
-
         const data = (await response.json()) as LocationOption[];
         if (!mounted) return;
-
         if (data.length) {
           setLocations(data);
-          setLocationId((currentLocationId) => (
-            data.some((location) => location.id === currentLocationId)
-              ? currentLocationId
-              : data[0].id
-          ));
+          setLocationId(cur => data.some(l => l.id === cur) ? cur : data[0].id);
         }
-      } catch {
-        // keep fallback locations
-      }
+      } catch { /* keep fallback */ }
     }
-
     void loadLocations();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
   async function onCheckout() {
-    setLoading(true);
-    setError(null);
-
+    setLoading(true); setError(null);
     try {
       const itemsRaw = window.localStorage.getItem('milkman_cart');
       const items = itemsRaw
-        ? (JSON.parse(itemsRaw) as CartItem[]).map((item) => ({
-          ...item,
-          productId: legacyProductIdMap[item.productId] ?? item.productId
-        }))
+        ? (JSON.parse(itemsRaw) as CartItem[]).map(item => ({
+            ...item, productId: legacyProductIdMap[item.productId] ?? item.productId
+          }))
         : [];
-
-      if (!items.length) {
-        throw new Error('Your cart is empty. Add at least one product before checkout.');
-      }
+      if (!items.length) throw new Error('Your cart is empty. Add at least one product before checkout.');
 
       const response = await fetch(`${apiUrl}/checkout`, {
         method: 'POST',
@@ -91,72 +68,61 @@ export function CheckoutClient() {
       });
 
       if (!response.ok) {
-        const errorPayload = (await response.json().catch(() => null)) as
-          | { error?: string | { formErrors?: string[] } }
-          | null;
-
-        const formError = typeof errorPayload?.error === 'object'
-          ? errorPayload.error.formErrors?.[0]
-          : undefined;
-        const errorMessage = typeof errorPayload?.error === 'string'
-          ? errorPayload.error
-          : formError;
-
-        throw new Error(errorMessage ?? `Checkout failed (HTTP ${response.status})`);
+        const payload = (await response.json().catch(() => null)) as { error?: string | { formErrors?: string[] } } | null;
+        const formError = typeof payload?.error === 'object' ? payload.error.formErrors?.[0] : undefined;
+        const msg = typeof payload?.error === 'string' ? payload.error : formError;
+        throw new Error(msg ?? `Checkout failed (HTTP ${response.status})`);
       }
 
       const data = (await response.json()) as { url?: string };
-      if (!data.url) {
-        throw new Error('Checkout URL missing');
-      }
-
+      if (!data.url) throw new Error('Checkout URL missing');
       window.location.href = data.url;
-    } catch (checkoutError) {
-      setError(checkoutError instanceof Error ? checkoutError.message : 'Unknown error');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
       setLoading(false);
     }
   }
 
   return (
-    <div className="card" style={{ padding: 20, maxWidth: 520 }}>
-      {!userSignedIn && (
-        <p style={{ fontSize: 13, color: '#6b7280', marginTop: 0, marginBottom: 14 }}>
-          <Link href="/login?next=/checkout" style={{ color: 'var(--color-brand)', fontWeight: 600 }}>Sign in</Link>
-          {' '}or{' '}
-          <Link href="/signup" style={{ color: 'var(--color-brand)', fontWeight: 600 }}>create account</Link>
-          {' '}to track your orders. You can also checkout as a guest below.
-        </p>
-      )}
+    <Card>
+      <CardContent className="p-6 grid gap-5">
+        {!userSignedIn && (
+          <p className="text-sm text-muted-foreground">
+            <Link href="/login?next=/checkout" className="text-primary font-semibold hover:underline">Sign in</Link>
+            {' '}or{' '}
+            <Link href="/signup" className="text-primary font-semibold hover:underline">create account</Link>
+            {' '}to track your orders. You can also checkout as a guest below.
+          </p>
+        )}
 
-      <label style={{ display: 'grid', gap: 6, marginBottom: 10 }}>
-        Customer email
-        <input
-          value={email}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => setEmail(event.target.value)}
-          style={{ padding: 10, borderRadius: 8, border: '1px solid #d0d7e5' }}
-        />
-      </label>
+        <div className="grid gap-1.5">
+          <Label>Customer email</Label>
+          <Input type="email" value={email}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} />
+        </div>
 
-      <label style={{ display: 'grid', gap: 6, marginBottom: 12 }}>
-        Location
-        <select
-          value={locationId}
-          onChange={(event: ChangeEvent<HTMLSelectElement>) => setLocationId(event.target.value)}
-          style={{ padding: 10, borderRadius: 8, border: '1px solid #d0d7e5' }}
-        >
-          {locations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.city} - {location.area}
-            </option>
-          ))}
-        </select>
-      </label>
+        <div className="grid gap-1.5">
+          <Label>Delivery location</Label>
+          <select title="Delivery location"
+            className="flex h-9 w-full rounded-lg border border-input bg-card px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            value={locationId}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => setLocationId(e.target.value)}>
+            {locations.map(loc => (
+              <option key={loc.id} value={loc.id}>{loc.city} — {loc.area}</option>
+            ))}
+          </select>
+        </div>
 
-      {error ? <p style={{ color: 'crimson' }}>{error}</p> : null}
+        {error && (
+          <div className="flex items-start gap-2 rounded-lg bg-red-50 text-red-700 px-3 py-2.5 text-sm">
+            <AlertCircle size={14} className="mt-0.5 shrink-0" />{error}
+          </div>
+        )}
 
-      <button className="button" disabled={loading} onClick={onCheckout}>
-        {loading ? 'Processing...' : 'Pay now'}
-      </button>
-    </div>
+        <Button disabled={loading} onClick={() => void onCheckout()} className="w-full" size="lg">
+          {loading ? 'Processing…' : 'Pay now'}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

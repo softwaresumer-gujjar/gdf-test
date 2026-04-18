@@ -2,6 +2,12 @@
 
 import { useState } from 'react';
 import { createClient } from '../../lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertCircle, Mail, Search } from 'lucide-react';
 
 type Subscriber = { id: string; email: string; active: boolean; subscribed_at: string; };
 
@@ -39,69 +45,102 @@ export default function NewsletterClient({ initialSubscribers, migrationNeeded }
 
   if (migrationNeeded) {
     return (
-      <div>
-        <div className="page-header"><h1>Newsletter</h1></div>
-        <div className="card" style={{ padding: 32, textAlign: 'center' }}>
-          <p style={{ fontSize: 32, marginBottom: 12 }}>⚠️</p>
-          <p style={{ fontWeight: 600, marginBottom: 8 }}>Database migration required</p>
-          <p style={{ color: 'var(--muted)', fontSize: 13 }}>Run <code>supabase/migrations/002_dashboard.sql</code> in Supabase SQL Editor to enable this feature.</p>
+      <div className="space-y-5">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Newsletter</h1>
         </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <AlertCircle size={40} className="mb-3 text-amber-500 opacity-70" />
+            <p className="font-semibold mb-2">Database migration required</p>
+            <p className="text-sm text-muted-foreground">Run <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">supabase/migrations/002_dashboard.sql</code> in Supabase SQL Editor to enable this feature.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="page-header">
-        <div><h1>Newsletter</h1><p className="page-header__sub">{subscribers.length} subscribers</p></div>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Newsletter</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">{subscribers.length} subscribers</p>
       </div>
 
-      <div className="card-grid card-grid--3" style={{ marginBottom: 24 }}>
-        <div className="card metric-card"><p className="metric-card__label">Total Subscribers</p><p className="metric-card__value">{subscribers.length}</p></div>
-        <div className="card metric-card"><p className="metric-card__label">Active</p><p className="metric-card__value">{subscribers.filter(s => s.active).length}</p></div>
-        <div className="card metric-card"><p className="metric-card__label">Unsubscribed</p><p className="metric-card__value">{subscribers.filter(s => !s.active).length}</p></div>
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Total Subscribers', value: subscribers.length },
+          { label: 'Active', value: subscribers.filter(s => s.active).length },
+          { label: 'Unsubscribed', value: subscribers.filter(s => !s.active).length },
+        ].map(({ label, value }) => (
+          <Card key={label}>
+            <CardContent className="p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">{label}</p>
+              <p className="text-2xl font-bold tracking-tight">{value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="card" style={{ padding: 20, marginBottom: 20 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Add Subscriber</h3>
-        {error && <div className="auth-page__alert auth-page__alert--error" style={{ marginBottom: 12 }}>{error}</div>}
-        <div style={{ display: 'flex', gap: 10 }}>
-          <input type="email" placeholder="email@example.com" value={email} onChange={e => setEmail(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') void add(); }}
-            style={{ maxWidth: 340 }} />
-          <button className="button" onClick={() => void add()} disabled={adding}>{adding ? 'Adding…' : 'Add'}</button>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-5">
+          <p className="text-sm font-bold mb-3">Add Subscriber</p>
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg bg-destructive/10 text-destructive px-3 py-2.5 text-sm mb-3">
+              <AlertCircle size={14} className="mt-0.5 shrink-0" />{error}
+            </div>
+          )}
+          <div className="flex gap-2 max-w-sm">
+            <Input type="email" placeholder="email@example.com" value={email}
+              onChange={e => setEmail(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') void add(); }} />
+            <Button onClick={() => void add()} disabled={adding}>{adding ? 'Adding…' : 'Add'}</Button>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="card">
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-          <div className="search-wrap">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" placeholder="Search subscribers…" value={search} onChange={e => setSearch(e.target.value)} />
+      <Card>
+        <div className="px-4 py-3 border-b border-border">
+          <div className="relative max-w-xs">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input className="pl-8" placeholder="Search subscribers…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Email</th><th>Status</th><th>Subscribed</th><th>Actions</th></tr></thead>
-            <tbody>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow><TableHead>Email</TableHead><TableHead>Status</TableHead><TableHead>Subscribed</TableHead><TableHead>Actions</TableHead></TableRow>
+            </TableHeader>
+            <TableBody>
               {filtered.map(s => (
-                <tr key={s.id}>
-                  <td>{s.email}</td>
-                  <td><span className={`badge ${s.active ? 'badge--active' : 'badge--inactive'}`}>{s.active ? 'Active' : 'Unsubscribed'}</span></td>
-                  <td style={{ fontSize: 12, color: 'var(--muted)' }}>{new Date(s.subscribed_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="button button--sm button--secondary" onClick={() => void toggle(s.id, s.active)}>{s.active ? 'Unsubscribe' : 'Resubscribe'}</button>
-                      <button className="button button--sm button--danger" onClick={() => void del(s.id)}>Remove</button>
+                <TableRow key={s.id}>
+                  <TableCell className="font-medium text-[13px]">{s.email}</TableCell>
+                  <TableCell><Badge variant={s.active ? 'active' : 'inactive'}>{s.active ? 'Active' : 'Unsubscribed'}</Badge></TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {new Date(s.subscribed_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => void toggle(s.id, s.active)}>
+                        {s.active ? 'Unsubscribe' : 'Resubscribe'}
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => void del(s.id)}>Remove</Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--muted)', padding: 32 }}>No subscribers.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                    <Mail size={32} className="mx-auto mb-2 opacity-20" />
+                    No subscribers.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

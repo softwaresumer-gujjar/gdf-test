@@ -2,8 +2,8 @@ import './globals.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Milkman Storefront',
-  description: 'Order fresh dairy with delivery flow.'
+  title: 'Pure Dairy Farmers',
+  description: 'Order fresh dairy products with home delivery.'
 };
 
 export default function RootLayout({
@@ -11,7 +11,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="bg-background text-foreground min-h-screen">{children}</body>
     </html>
   );
 }

@@ -1,4 +1,6 @@
 import { SuccessClient } from './success-client';
+import { Card, CardContent } from '@/components/ui/card';
+import Link from 'next/link';
 
 export default async function SuccessPage({
   searchParams
@@ -8,13 +10,16 @@ export default async function SuccessPage({
   const params = await searchParams;
 
   return (
-    <main className="container" style={{ paddingTop: 30 }}>
-      <div className="card" style={{ padding: 24 }}>
-        <SuccessClient
-          amount={params.amount}
-          orderId={params.order_id}
-          sessionId={params.session_id}
-        />
+    <main className="min-h-screen bg-background flex items-center justify-center px-4 py-16">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-6">
+          <Link href="/" className="text-primary font-bold text-lg">Pure Dairy Farmers</Link>
+        </div>
+        <Card>
+          <CardContent className="p-8">
+            <SuccessClient amount={params.amount} orderId={params.order_id} sessionId={params.session_id} />
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

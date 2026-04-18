@@ -1,5 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { RevenueBarChart, SalesLineChart, OrderDonut } from '../../ui/charts';
 
 function adminClient() {
@@ -11,7 +13,6 @@ export default async function AnalyticsPage() {
   const { data: orders } = await sb.from('orders').select('id,status,total_pkr,created_at').order('created_at');
   const safeOrders = orders ?? [];
 
-  // Monthly revenue (last 6 months)
   const now = new Date();
   const monthlyData = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
@@ -23,7 +24,6 @@ export default async function AnalyticsPage() {
     return { month, revenue };
   });
 
-  // Daily (last 14 days)
   const dailyData = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(now); d.setDate(d.getDate() - (13 - i));
     const date = d.toLocaleDateString('en-PK', { month: 'short', day: 'numeric' });
@@ -38,7 +38,6 @@ export default async function AnalyticsPage() {
     };
   });
 
-  // Status breakdown
   const statusMap: Record<string, number> = {};
   safeOrders.forEach(o => { statusMap[o.status] = (statusMap[o.status] ?? 0) + 1; });
   const donutData = Object.entries(statusMap).map(([name, value]) => ({ name, value }));
@@ -48,53 +47,65 @@ export default async function AnalyticsPage() {
   const conversionRate = safeOrders.length ? ((safeOrders.filter(o => o.status !== 'cancelled').length / safeOrders.length) * 100).toFixed(1) : '0';
 
   return (
-    <div>
-      <div className="page-header">
-        <div><h1>Analytics</h1><p className="page-header__sub">Performance overview</p></div>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Performance overview</p>
       </div>
 
-      <div className="card-grid card-grid--3" style={{ marginBottom: 24 }}>
+      <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Total Revenue', value: `PKR ${totalRevenue.toLocaleString()}` },
           { label: 'Avg. Order Value', value: `PKR ${avgOrderValue.toLocaleString()}` },
           { label: 'Conversion Rate', value: `${conversionRate}%` },
         ].map(({ label, value }) => (
-          <div key={label} className="card metric-card">
-            <p className="metric-card__label">{label}</p>
-            <p className="metric-card__value">{value}</p>
-          </div>
+          <Card key={label}>
+            <CardContent className="p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">{label}</p>
+              <p className="text-2xl font-bold tracking-tight">{value}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      <div className="card-grid card-grid--2" style={{ marginBottom: 24 }}>
-        <div className="card" style={{ padding: '20px 20px 12px' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Monthly Revenue</h3>
-          <RevenueBarChart data={monthlyData} />
-        </div>
-        <div className="card" style={{ padding: '20px 20px 12px' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Daily Sales (14 days)</h3>
-          <SalesLineChart data={dailyData} />
-        </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="p-5 pb-3">
+            <p className="text-sm font-bold mb-4">Monthly Revenue</p>
+            <RevenueBarChart data={monthlyData} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5 pb-3">
+            <p className="text-sm font-bold mb-4">Daily Sales (14 days)</p>
+            <SalesLineChart data={dailyData} />
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="card-grid card-grid--2">
-        <div className="card" style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Order Status Breakdown</h3>
-          {donutData.length > 0 ? <OrderDonut data={donutData} />
-            : <p style={{ color: 'var(--muted)', padding: '20px 0' }}>No orders yet.</p>}
-        </div>
-        <div className="card" style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Status Summary</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {Object.entries(statusMap).map(([status, count]) => (
-              <div key={status} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span className={`badge badge--${status}`}>{status}</span>
-                <span style={{ fontWeight: 700 }}>{count}</span>
-              </div>
-            ))}
-            {donutData.length === 0 && <p style={{ color: 'var(--muted)' }}>No data.</p>}
-          </div>
-        </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-sm font-bold mb-4">Order Status Breakdown</p>
+            {donutData.length > 0
+              ? <OrderDonut data={donutData} />
+              : <p className="text-sm text-muted-foreground py-5">No orders yet.</p>}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-sm font-bold mb-4">Status Summary</p>
+            <div className="flex flex-col gap-3">
+              {Object.entries(statusMap).map(([status, count]) => (
+                <div key={status} className="flex items-center justify-between">
+                  <Badge variant={status as 'pending' | 'paid' | 'dispatched' | 'delivered' | 'cancelled'}>{status}</Badge>
+                  <span className="font-bold text-sm">{count}</span>
+                </div>
+              ))}
+              {donutData.length === 0 && <p className="text-sm text-muted-foreground">No data.</p>}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

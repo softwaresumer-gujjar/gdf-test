@@ -1,23 +1,17 @@
 export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 type Customer = {
-  id: string;
-  email: string;
-  name: string | null;
-  phone: string | null;
-  total_orders: number;
-  total_spent_pkr: number;
-  first_order_at: string | null;
-  last_order_at: string | null;
-  created_at: string;
+  id: string; email: string; name: string | null; phone: string | null;
+  total_orders: number; total_spent_pkr: number;
+  first_order_at: string | null; last_order_at: string | null; created_at: string;
 };
 
 function adminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 }
 
 export default async function CustomerPage() {
@@ -33,83 +27,68 @@ export default async function CustomerPage() {
     ? (safeCustomers.reduce((s, c) => s + c.total_orders, 0) / safeCustomers.length).toFixed(1)
     : '0';
 
+  const metrics = [
+    { label: 'Total Customers', value: safeCustomers.length },
+    { label: 'Total Revenue', value: `PKR ${totalRevenue.toLocaleString()}` },
+    { label: 'Avg. Orders / Customer', value: avgOrders },
+  ];
+
   return (
-    <div>
-      <div className="page-header">
-        <div>
-          <h1>Customers</h1>
-          <p className="page-header__sub">{safeCustomers.length} customers</p>
-        </div>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Customers</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">{safeCustomers.length} customers</p>
       </div>
 
-      <div className="card-grid card-grid--3" style={{ marginBottom: 24 }}>
-        <div className="card metric-card">
-          <p className="metric-card__label">Total Customers</p>
-          <p className="metric-card__value">{safeCustomers.length}</p>
-        </div>
-        <div className="card metric-card">
-          <p className="metric-card__label">Total Revenue</p>
-          <p className="metric-card__value">PKR {totalRevenue.toLocaleString()}</p>
-        </div>
-        <div className="card metric-card">
-          <p className="metric-card__label">Avg. Orders / Customer</p>
-          <p className="metric-card__value">{avgOrders}</p>
-        </div>
+      <div className="grid grid-cols-3 gap-4">
+        {metrics.map(m => (
+          <Card key={m.label}>
+            <CardContent className="p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">{m.label}</p>
+              <p className="text-2xl font-bold tracking-tight">{m.value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="card">
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Customer</th>
-                <th>Phone</th>
-                <th>Orders</th>
-                <th>Total Spent</th>
-                <th>First Order</th>
-                <th>Last Order</th>
-              </tr>
-            </thead>
-            <tbody>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow><TableHead>Customer</TableHead><TableHead>Phone</TableHead><TableHead>Orders</TableHead><TableHead>Total Spent</TableHead><TableHead>First Order</TableHead><TableHead>Last Order</TableHead></TableRow>
+            </TableHeader>
+            <TableBody>
               {safeCustomers.map(c => (
-                <tr key={c.id}>
-                  <td>
-                    <div className="customer-cell">
-                      <div className="customer-avatar">
-                        {(c.name ?? c.email)[0].toUpperCase()}
-                      </div>
+                <TableRow key={c.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2.5">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>{(c.name ?? c.email)[0].toUpperCase()}</AvatarFallback>
+                      </Avatar>
                       <div>
-                        <p className="customer-name">{c.name ?? '—'}</p>
-                        <p className="customer-email">{c.email}</p>
+                        <p className="font-semibold text-[13px]">{c.name ?? '—'}</p>
+                        <p className="text-[11px] text-muted-foreground">{c.email}</p>
                       </div>
                     </div>
-                  </td>
-                  <td style={{ color: 'var(--muted)' }}>{c.phone ?? '—'}</td>
-                  <td style={{ fontWeight: 600 }}>{c.total_orders}</td>
-                  <td style={{ fontWeight: 700 }}>PKR {c.total_spent_pkr.toLocaleString()}</td>
-                  <td style={{ fontSize: 12, color: 'var(--muted)' }}>
-                    {c.first_order_at
-                      ? new Date(c.first_order_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })
-                      : '—'}
-                  </td>
-                  <td style={{ fontSize: 12, color: 'var(--muted)' }}>
-                    {c.last_order_at
-                      ? new Date(c.last_order_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })
-                      : '—'}
-                  </td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-[13px]">{c.phone ?? '—'}</TableCell>
+                  <TableCell className="font-semibold text-[13px]">{c.total_orders}</TableCell>
+                  <TableCell className="font-bold text-[13px]">PKR {c.total_spent_pkr.toLocaleString()}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {c.first_order_at ? new Date(c.first_order_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {c.last_order_at ? new Date(c.last_order_at).toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                  </TableCell>
+                </TableRow>
               ))}
               {safeCustomers.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', color: 'var(--muted)', padding: 40 }}>
-                    No customers yet. Customers appear here after their first payment.
-                  </td>
-                </tr>
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-10">No customers yet. Customers appear here after their first payment.</TableCell></TableRow>
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

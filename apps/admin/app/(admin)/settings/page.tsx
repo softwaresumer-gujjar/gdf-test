@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '../../lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertCircle, CheckCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
   const [tab, setTab] = useState<'profile' | 'password' | 'store'>('profile');
@@ -69,110 +75,124 @@ export default function SettingsPage() {
     { key: 'store', label: 'Store' },
   ] as const;
 
+  function Msg({ msg }: { msg: { type: 'success' | 'error'; text: string } }) {
+    return msg.type === 'success'
+      ? <div className="flex items-start gap-2 rounded-lg bg-primary/10 text-primary px-3 py-2.5 text-sm mb-4"><CheckCircle size={14} className="mt-0.5 shrink-0" />{msg.text}</div>
+      : <div className="flex items-start gap-2 rounded-lg bg-destructive/10 text-destructive px-3 py-2.5 text-sm mb-4"><AlertCircle size={14} className="mt-0.5 shrink-0" />{msg.text}</div>;
+  }
+
   return (
-    <div>
-      <div className="page-header">
-        <div><h1>Settings</h1><p className="page-header__sub">Manage your account and store</p></div>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Manage your account and store</p>
       </div>
 
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 24 }}>
+      <div className="flex border-b border-border">
         {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            style={{ padding: '10px 22px', fontSize: 14, fontWeight: tab === t.key ? 700 : 500, color: tab === t.key ? 'var(--green)' : 'var(--muted)', background: 'none', border: 'none', borderBottom: tab === t.key ? '2px solid var(--green)' : '2px solid transparent', cursor: 'pointer', transition: 'all .15s' }}>
+          <button key={t.key} type="button" onClick={() => setTab(t.key)}
+            className={cn(
+              'px-5 py-2.5 text-sm font-medium border-b-2 transition-colors',
+              tab === t.key
+                ? 'border-primary text-primary font-bold'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            )}>
             {t.label}
           </button>
         ))}
       </div>
 
       {tab === 'profile' && (
-        <div className="card" style={{ padding: 28, maxWidth: 520 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>Profile Information</h3>
-          {profileMsg && <div className={`auth-page__alert auth-page__alert--${profileMsg.type}`} style={{ marginBottom: 16 }}>{profileMsg.text}</div>}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Full Name</label>
-              <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Email Address</label>
-              <input type="email" value={email} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
-              <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>Email cannot be changed here.</p>
-            </div>
-            <div>
-              <button className="button" onClick={saveProfile} disabled={profileSaving}>
+        <Card className="max-w-lg">
+          <CardContent className="p-6">
+            <p className="text-[15px] font-bold mb-5">Profile Information</p>
+            {profileMsg && <Msg msg={profileMsg} />}
+            <div className="grid gap-4">
+              <div className="grid gap-1.5">
+                <Label>Full Name</Label>
+                <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Email Address</Label>
+                <Input type="email" value={email} disabled className="opacity-60 cursor-not-allowed" />
+                <p className="text-xs text-muted-foreground">Email cannot be changed here.</p>
+              </div>
+              <Button onClick={saveProfile} disabled={profileSaving} className="w-fit">
                 {profileSaving ? 'Saving…' : 'Save Profile'}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {tab === 'password' && (
-        <div className="card" style={{ padding: 28, maxWidth: 520 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>Change Password</h3>
-          {pwMsg && <div className={`auth-page__alert auth-page__alert--${pwMsg.type}`} style={{ marginBottom: 16 }}>{pwMsg.text}</div>}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Current Password</label>
-              <input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="Current password" />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>New Password</label>
-              <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="New password (min 6 chars)" />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Confirm New Password</label>
-              <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Repeat new password"
-                onKeyDown={e => { if (e.key === 'Enter') void savePassword(); }} />
-            </div>
-            <div>
-              <button className="button" onClick={() => void savePassword()} disabled={pwSaving}>
+        <Card className="max-w-lg">
+          <CardContent className="p-6">
+            <p className="text-[15px] font-bold mb-5">Change Password</p>
+            {pwMsg && <Msg msg={pwMsg} />}
+            <div className="grid gap-4">
+              <div className="grid gap-1.5">
+                <Label>Current Password</Label>
+                <Input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="Current password" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>New Password</Label>
+                <Input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="New password (min 6 chars)" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Confirm New Password</Label>
+                <Input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Repeat new password"
+                  onKeyDown={e => { if (e.key === 'Enter') void savePassword(); }} />
+              </div>
+              <Button onClick={() => void savePassword()} disabled={pwSaving} className="w-fit">
                 {pwSaving ? 'Updating…' : 'Update Password'}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {tab === 'store' && (
-        <div className="card" style={{ padding: 28, maxWidth: 520 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 20 }}>Store Configuration</h3>
-          {storeMsg && <div className={`auth-page__alert auth-page__alert--${storeMsg.type}`} style={{ marginBottom: 16 }}>{storeMsg.text}</div>}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Store Name</label>
-              <input type="text" value={storeName} onChange={e => setStoreName(e.target.value)} placeholder="Store name" />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Currency</label>
-              <select value={storeCurrency} onChange={e => setStoreCurrency(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14, background: 'var(--card)', color: 'var(--text)' }}>
-                <option value="PKR">PKR – Pakistani Rupee</option>
-                <option value="USD">USD – US Dollar</option>
-                <option value="EUR">EUR – Euro</option>
-                <option value="GBP">GBP – British Pound</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Contact Email</label>
-              <input type="email" value={storeEmail} onChange={e => setStoreEmail(e.target.value)} placeholder="store@example.com" />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Phone Number</label>
-              <input type="text" value={storePhone} onChange={e => setStorePhone(e.target.value)} placeholder="+92 300 0000000" />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Store Address</label>
-              <textarea value={storeAddress} onChange={e => setStoreAddress(e.target.value)} placeholder="123 Main Street, Lahore, Pakistan" rows={3}
-                style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 14, background: 'var(--card)', color: 'var(--text)', resize: 'vertical', fontFamily: 'inherit' }} />
-            </div>
-            <div>
-              <button className="button" onClick={saveStore} disabled={storeSaving}>
+        <Card className="max-w-lg">
+          <CardContent className="p-6">
+            <p className="text-[15px] font-bold mb-5">Store Configuration</p>
+            {storeMsg && <Msg msg={storeMsg} />}
+            <div className="grid gap-4">
+              <div className="grid gap-1.5">
+                <Label>Store Name</Label>
+                <Input value={storeName} onChange={e => setStoreName(e.target.value)} placeholder="Store name" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Currency</Label>
+                <select title="Currency"
+                  className="flex h-9 w-full rounded-lg border border-input bg-card px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={storeCurrency} onChange={e => setStoreCurrency(e.target.value)}>
+                  <option value="PKR">PKR – Pakistani Rupee</option>
+                  <option value="USD">USD – US Dollar</option>
+                  <option value="EUR">EUR – Euro</option>
+                  <option value="GBP">GBP – British Pound</option>
+                </select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Contact Email</Label>
+                <Input type="email" value={storeEmail} onChange={e => setStoreEmail(e.target.value)} placeholder="store@example.com" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Phone Number</Label>
+                <Input value={storePhone} onChange={e => setStorePhone(e.target.value)} placeholder="+92 300 0000000" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Store Address</Label>
+                <textarea title="Store Address" placeholder="123 Main Street, Lahore, Pakistan" rows={3}
+                  className="flex w-full rounded-lg border border-input bg-card px-3 py-2 text-sm resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={storeAddress} onChange={e => setStoreAddress(e.target.value)} />
+              </div>
+              <Button onClick={saveStore} disabled={storeSaving} className="w-fit">
                 {storeSaving ? 'Saving…' : 'Save Settings'}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
