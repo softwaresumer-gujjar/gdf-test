@@ -1,0 +1,34 @@
+node_modules/
+.next/
+dist/
+coverage/
+out/
+
+# Environment files — NEVER COMMIT
+.env
+.env.*
+.env.local
+!.env.example
+
+# Supabase temp files
+supabase/.branches/
+supabase/.temp/
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Lockfiles (monorepo uses npm workspaces)
+pnpm-lock.yaml
+
+# Test artifacts
+test-*.mjs
+playwright-report/
+test-results/

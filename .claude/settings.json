@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx supabase *)",
+      "Bash(npx playwright *)",
+      "Bash(stripe *)",
+      "Bash(node *.mjs)",
+      "Bash(node *.js)",
+      "Bash(curl https://api.supabase.com/*)",
+      "Bash(curl https://*.supabase.co/*)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(gh repo *)",
+      "Bash(gh auth *)"
+    ]
+  }
+}

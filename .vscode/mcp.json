@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "stripe": {
+      "url": "https://mcp.stripe.com"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--allowed-hosts",
+        "stripe.com,*.stripe.com"
+      ]
+    }
+  }
+}

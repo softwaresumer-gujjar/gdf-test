@@ -1,0 +1,23 @@
+{
+  "name": "milkman-clone-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,storefront,admin -c yellow,cyan,magenta \"npm run dev:api\" \"npm run dev:storefront\" \"npm run dev:admin\"",
+    "dev:storefront": "npm --workspace @apps/storefront run dev",
+    "dev:admin": "npm --workspace @apps/admin run dev",
+    "dev:api": "cd apps/api && npx tsx src/index.ts",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "playwright": "^1.59.1",
+    "supabase": "^2.92.0"
+  }
+}

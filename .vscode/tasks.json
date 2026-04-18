@@ -1,0 +1,25 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Storefront Dev",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev:storefront"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "Check Local Endpoints",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$urls=@('http://localhost:3000','http://localhost:3001/login','http://localhost:4000/health'); foreach($u in $urls){ try { $r=Invoke-WebRequest -Uri $u -UseBasicParsing -TimeoutSec 12; Write-Output \"$u => $($r.StatusCode)\" } catch { Write-Output \"$u => FAIL: $($_.Exception.Message)\" } }"
+			]
+		}
+	]
+}
