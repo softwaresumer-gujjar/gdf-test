@@ -34,6 +34,12 @@
   }
 }
 
+@layer utilities {
+  .bg-brand-gradient {
+    background: linear-gradient(145deg, #1875D1 0%, #0c4fa8 60%, #0a3d85 100%);
+  }
+}
+
 @layer base {
   * { @apply border-border; }
   body {

@@ -15,6 +15,8 @@ export interface Product {
   pricePkr: number;
   imageUrl: string;
   inStock: boolean;
+  category?: string;
+  stockCount?: number;
 }
 
 export interface CartItem {
