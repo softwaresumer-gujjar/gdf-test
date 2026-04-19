@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '../lib/supabase/client';
 import { AlertCircle } from 'lucide-react';
+import { PageHeader } from '../ui/page-header';
+import { Footer } from '../ui/footer';
 
 function LoginForm() {
   const router = useRouter();
@@ -28,51 +30,48 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-gradient flex flex-col">
-      <header className="px-5 py-4">
-        <Link href="/">
-          <img src="/logo.svg" alt="Gujjar Dairy Farmers" className="h-10 w-10 rounded-xl shadow-lg" />
-        </Link>
-      </header>
-      <div className="flex-1 flex items-center justify-center px-4 pb-10">
-        <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7">
-          <div className="text-center mb-7">
-            <img src="/logo.svg" alt="Gujjar Dairy Farmers" className="h-14 w-14 rounded-2xl mx-auto mb-3 shadow" />
-            <h1 className="text-xl font-bold text-gray-800">Sign in</h1>
-            <p className="text-sm text-gray-400 mt-1">Welcome back to Gujjar Dairy Farmers</p>
+    <div className="min-h-screen bg-background flex flex-col">
+      <PageHeader />
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-sm bg-card border border-border rounded-lg shadow-sm p-7">
+          <div className="text-center mb-6">
+            <img src="/logo.svg" alt="Gujjar Dairy Farmers" className="h-14 w-14 rounded-lg mx-auto mb-3" />
+            <h1 className="text-xl font-bold">Sign in</h1>
+            <p className="text-sm text-muted-foreground mt-1">Welcome back to Gujjar Dairy Farmers</p>
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 rounded-xl bg-red-50 text-red-600 px-3 py-2.5 text-sm mb-5">
+            <div className="flex items-start gap-2 rounded-lg bg-destructive/10 text-destructive px-3 py-2.5 text-sm mb-5 border border-destructive/20">
               <AlertCircle size={14} className="mt-0.5 shrink-0" />{error}
             </div>
           )}
 
-          <form onSubmit={e => { e.preventDefault(); void onSubmit(); }} className="grid gap-4">
+          <form onSubmit={(e) => { e.preventDefault(); void onSubmit(); }} className="grid gap-4">
             <div className="grid gap-1.5">
-              <label className="text-xs font-semibold text-gray-600">Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+              <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
                 placeholder="you@example.com"
-                className="w-full h-10 px-3.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+                className="w-full h-10 px-3.5 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
             </div>
             <div className="grid gap-1.5">
-              <label className="text-xs font-semibold text-gray-600">Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
+              <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Password</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
                 placeholder="••••••••"
-                className="w-full h-10 px-3.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
+                className="w-full h-10 px-3.5 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" />
             </div>
             <button type="submit" disabled={loading}
-              className="w-full h-11 bg-primary text-white font-bold rounded-full hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-60 mt-1">
+              className="w-full h-11 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-60 mt-1">
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-400 mt-6">
+          <p className="text-center text-sm text-muted-foreground mt-6">
             New customer?{' '}
-            <Link href="/signup" className="text-primary font-bold hover:underline">Create account</Link>
+            <Link href="/signup" className="text-primary font-semibold hover:underline">Create account</Link>
           </p>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

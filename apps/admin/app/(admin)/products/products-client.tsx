@@ -14,12 +14,12 @@ import { Search, Plus, AlertCircle } from 'lucide-react';
 type Product = {
   id: string; name: string; slug: string; description: string | null;
   price_pkr: number; image_url: string | null; video_url: string | null;
-  in_stock: boolean; stock_count: number; category: string; created_at: string;
+  in_stock: boolean; stock_count: number; category: string; featured: boolean; created_at: string;
 };
 
 const EMPTY: Omit<Product, 'id' | 'created_at'> = {
   name: '', slug: '', description: '', price_pkr: 0, image_url: '',
-  video_url: '', in_stock: true, stock_count: 0, category: 'Milk',
+  video_url: '', in_stock: true, stock_count: 0, category: 'Milk', featured: false,
 };
 
 const CATEGORIES = ['Milk', 'Yogurt', 'Cheese', 'Butter', 'Cream', 'Other'];
@@ -42,7 +42,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
   function openEdit(p: Product) {
     setForm({ name: p.name, slug: p.slug, description: p.description ?? '', price_pkr: p.price_pkr,
       image_url: p.image_url ?? '', video_url: p.video_url ?? '', in_stock: p.in_stock,
-      stock_count: p.stock_count ?? 0, category: p.category ?? 'Milk' });
+      stock_count: p.stock_count ?? 0, category: p.category ?? 'Milk', featured: p.featured ?? false });
     setEditId(p.id); setError(null); setModal('edit');
   }
 
@@ -91,7 +91,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow><TableHead>Product</TableHead><TableHead>Category</TableHead><TableHead>Price</TableHead><TableHead>Stock</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow>
+              <TableRow><TableHead>Product</TableHead><TableHead>Category</TableHead><TableHead>Price</TableHead><TableHead>Stock</TableHead><TableHead>Status</TableHead><TableHead>Featured</TableHead><TableHead>Actions</TableHead></TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map(p => (
@@ -111,6 +111,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
                   <TableCell className="font-semibold text-[13px]">PKR {p.price_pkr.toLocaleString()}</TableCell>
                   <TableCell className="text-[13px]">{p.stock_count ?? 0}</TableCell>
                   <TableCell><Badge variant={p.in_stock ? 'active' : 'inactive'}>{p.in_stock ? 'In Stock' : 'Out of Stock'}</Badge></TableCell>
+                  <TableCell>{p.featured ? <span className="text-amber-500 font-bold text-sm">⭐</span> : <span className="text-muted-foreground text-xs">—</span>}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(p)}>Edit</Button>
@@ -170,6 +171,12 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
               </div>
             </div>
             <div className="grid gap-1.5"><Label>Image URL</Label><Input type="url" value={form.image_url ?? ''} onChange={e => f('image_url', e.target.value)} /></div>
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input type="checkbox" checked={form.featured ?? false} onChange={e => f('featured', e.target.checked)}
+                className="w-4 h-4 rounded accent-primary cursor-pointer" />
+              <span className="text-sm font-medium">⭐ Mark as Featured product</span>
+              <span className="text-[11px] text-muted-foreground">(shown in "Our Best" on storefront)</span>
+            </label>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setModal(null)}>Cancel</Button>

@@ -17,6 +17,8 @@ export interface Product {
   inStock: boolean;
   category?: string;
   stockCount?: number;
+  featured?: boolean;
+  createdAt?: string;
 }
 
 export interface CartItem {
@@ -28,6 +30,7 @@ export interface CheckoutRequest {
   items: CartItem[];
   locationId: string;
   customerEmail: string;
+  couponCode?: string;
 }
 
 export type OrderStatus = 'pending' | 'paid' | 'dispatched' | 'delivered' | 'cancelled';

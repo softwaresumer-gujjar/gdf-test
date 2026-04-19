@@ -104,6 +104,8 @@ Without this, Next.js may cache the page and serve stale data instead of fresh S
 - A customer can be a guest (no `profiles` row) — always use `customers` table for customer reporting
 - `is_admin()` function exists in Supabase (migration 003) — used by RLS policies
 - Service role bypasses RLS — safe for server-side admin operations
+- `products` table has a `featured BOOLEAN NOT NULL DEFAULT false` column (added via Management API) — used to show "Our Best" section on storefront
+- `offers` table columns: `code`, `discount_percentage`, `active`, `stock_limit`, `used_count`, `expires_at`
 
 ## Secrets Management — NEVER COMMIT SECRETS
 
@@ -156,6 +158,71 @@ Team ID: `team_PShJguBRgoIO4oWTH3DdWYbS`
 - Trigger test webhook: `stripe trigger checkout.session.completed --api-key <key>`
 - After trigger, verify in Supabase: `curl .../rest/v1/orders` with service key
 
+## Storefront Architecture
+
+### Routes
+| Route | Type | Description |
+|-------|------|-------------|
+| `/` | Server + client | Full homepage (hero, promo, categories, featured products, catalog) |
+| `/products/[id]` | Server + client | Product Detail Page (PDP) |
+| `/checkout` | Client | Cart → Stripe checkout with coupon support |
+| `/checkout/success` | Server | Post-payment confirmation |
+| `/checkout/cancelled` | Server | Payment cancelled page |
+| `/account/orders` | Server | Customer order history (requires auth) |
+| `/login` | Client | Sign in page |
+| `/signup` | Client | Create account page |
+
+### API Routes (Fastify, port 4000)
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/products` | All products (used by storefront homepage) |
+| `GET` | `/products/:id` | Single product by ID (used by PDP) |
+| `GET` | `/offers/validate?code=XXX` | Validate coupon code — returns `{ valid, discount_percentage, title }` or 404 |
+| `POST` | `/checkout` | Create Stripe session; accepts optional `couponCode`; applies % discount to all line items; increments `used_count` |
+
+### Shared UI Components
+| File | Used on |
+|------|---------|
+| `app/ui/header.tsx` | Homepage, PDP — full sticky header with search autocomplete, cart button, wishlist count |
+| `app/ui/page-header.tsx` | Checkout, login, signup, orders, cancelled, success — lightweight header |
+| `app/ui/footer.tsx` | All pages — 4-column footer with trust badges |
+| `app/ui/mini-cart.tsx` | Opened from Header — right-side sheet using `@radix-ui/react-dialog` |
+
+### Cart Context
+`app/lib/cart-context.tsx` — React Context wrapping the entire app (wired in `layout.tsx`).
+
+Stores enriched cart items: `{ productId, name, pricePkr, imageUrl, quantity }`.
+localStorage key: `gdf_cart_v2` (migrates old `gdf_cart` format on first load).
+
+```ts
+const { addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal } = useCart();
+```
+
+### localStorage Keys
+| Key | Format | Description |
+|-----|--------|-------------|
+| `gdf_cart_v2` | `CartItem[]` | Active cart items (enriched with name/price/image) |
+| `gdf_wishlist` | `string[]` | Product IDs the user has wishlisted |
+| `gdf_recently_viewed` | `string[]` | Product IDs recently viewed on PDP (max 10, newest first) |
+
+### Custom DOM Events
+| Event | Payload | When |
+|-------|---------|------|
+| `gdf-category-select` | `{ detail: categoryName }` | CategoryGrid fires, ShopClient listens to filter catalog |
+| `gdf-wishlist-update` | (no payload) | Fired after wishlist localStorage change so all components re-read it |
+
+### Coupon / Offer Flow
+1. User enters code at checkout → `GET /offers/validate?code=XXX`
+2. API checks: `active=true`, code matches, not expired, under stock_limit
+3. Returns `{ valid: true, discount_percentage: 40, title: "WELCOME40" }`
+4. Checkout client shows discount breakdown and updated total
+5. On submit: `couponCode` sent in POST body → API applies discount to Stripe line items by multiplying `unit_amount * (1 - pct/100)` and increments `used_count`
+
+### Header Strategy
+- **Full `<Header>`**: use on homepage (`page.tsx`) and PDP (`products/[id]/page.tsx`) — needs product list for search autocomplete
+- **`<PageHeader>`**: use on all other pages (checkout, login, signup, orders) — no product prop, server-compatible
+- Never add search autocomplete to PageHeader; it would require passing products to every page
+
 ## Common Mistakes to Avoid
 1. **Missing `force-dynamic`** → pages serve cached data from build time
 2. **Using anon key in server components** → RLS blocks data, silent empty results
@@ -164,6 +231,9 @@ Team ID: `team_PShJguBRgoIO4oWTH3DdWYbS`
 5. **Committing `.env` files** → always check `.gitignore` before first commit
 6. **Modifying `customers` table manually** → it's managed by the Edge Function; totals auto-calculate
 7. **newsletter/offers RLS depends on `is_admin()`** → if function missing, these pages silently fail
+8. **Using raw localStorage for cart** → use CartContext (`useCart()`) instead; raw localStorage misses the enriched item data (name, price, image) needed by mini-cart
+9. **Using `<img>` without alt on product images** → use product name as alt text; emoji fallback for missing images
+10. **Adding `<Header>` to checkout/login/signup pages** → use `<PageHeader>` instead to avoid passing products everywhere and keep these pages lightweight
 
 ## Environment Variables Reference
 

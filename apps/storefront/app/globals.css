@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* Gujjar Dairy brand blue: #1875D1 → hsl(213, 76%, 46%) */
-    --background:   0 0% 100%;            /* pure white */
+    --background:   216 30% 97%;          /* very light blue-grey background */
     --foreground:   220 25% 12%;          /* deep navy text */
 
     --card:         0 0% 100%;
