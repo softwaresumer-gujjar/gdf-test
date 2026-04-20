@@ -20,6 +20,7 @@ export interface Product {
   featured?: boolean;
   visible?: boolean;
   createdAt?: string;
+  imageUrls?: string[];
 }
 
 export interface CartItem {

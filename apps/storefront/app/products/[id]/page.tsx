@@ -1,39 +1,81 @@
 import { notFound } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
 import type { Product } from '@packages/types';
 import { Header } from '../../ui/header';
 import { Footer } from '../../ui/footer';
 import { TrackView } from '../../ui/track-view';
 import { AddToCartPDP } from '../../ui/add-to-cart-pdp';
 import { WishlistButtonPDP } from '../../ui/wishlist-button-pdp';
+import { PDPImageGallery } from '../../ui/pdp-image-gallery';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const PRODUCT_SELECT = 'id, name, slug, description, price_pkr, image_url, image_urls, in_stock, category, stock_count, featured, visible, created_at';
+
+function adminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
+
+function mapRow(row: Record<string, unknown>): Product {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    slug: (row.slug as string) ?? '',
+    description: (row.description as string) ?? '',
+    pricePkr: row.price_pkr as number,
+    imageUrl: (row.image_url as string) ?? '',
+    imageUrls: (row.image_urls as string[]) ?? [],
+    inStock: row.in_stock as boolean,
+    category: (row.category as string) ?? 'Milk',
+    stockCount: (row.stock_count as number) ?? 0,
+    featured: (row.featured as boolean) ?? false,
+    visible: (row.visible as boolean) ?? false,
+    createdAt: row.created_at as string,
+  };
+}
 
 async function getProduct(id: string): Promise<Product | null> {
   try {
-    const res = await fetch(`${apiUrl}/products/${id}`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    return (await res.json()) as Product;
+    const sb = adminClient();
+    const { data, error } = await sb
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('id', id)
+      .single();
+    if (error || !data) return null;
+    return mapRow(data as Record<string, unknown>);
   } catch { return null; }
 }
 
-async function getAllProducts(): Promise<Product[]> {
+async function getVisibleProducts(): Promise<Product[]> {
   try {
-    const res = await fetch(`${apiUrl}/products`, { cache: 'no-store' });
-    if (!res.ok) return [];
-    return (await res.json()) as Product[];
+    const sb = adminClient();
+    const { data } = await sb
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('visible', true)
+      .order('created_at', { ascending: false });
+    return (data ?? []).map((r) => mapRow(r as Record<string, unknown>));
   } catch { return []; }
 }
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [product, allProducts] = await Promise.all([getProduct(id), getAllProducts()]);
+  const [product, allProducts] = await Promise.all([getProduct(id), getVisibleProducts()]);
 
   if (!product) notFound();
 
+  // Build image list: primary image first, then any additional images, deduped
+  const allImages = [
+    ...(product.imageUrl ? [product.imageUrl] : []),
+    ...(product.imageUrls ?? []).filter((u) => u && u !== product.imageUrl),
+  ].filter(Boolean);
+
   const related = allProducts
-    .filter((p) => p.category === product.category && p.id !== product.id)
+    .filter((p) => p.category === product.category && p.id !== product.id && p.inStock)
     .slice(0, 4);
 
   return (
@@ -43,7 +85,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
       <div className="max-w-screen-xl mx-auto px-4 py-6">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-[12px] text-muted-foreground mb-6">
+        <nav className="flex items-center gap-1.5 text-[12px] text-muted-foreground mb-6 flex-wrap">
           <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
           <ChevronRight size={12} />
           <Link href="/#catalog" className="hover:text-foreground transition-colors">Shop</Link>
@@ -59,12 +101,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
         {/* PDP layout */}
         <div className="grid md:grid-cols-2 gap-8 mb-12">
-          {/* Image */}
-          <div className="bg-card border border-border rounded-lg overflow-hidden aspect-square flex items-center justify-center">
-            {product.imageUrl
-              ? <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-              : <span className="text-8xl select-none">🥛</span>}
-          </div>
+          {/* Image gallery */}
+          <PDPImageGallery
+            images={allImages.length > 0 ? allImages : []}
+            productName={product.name}
+          />
 
           {/* Details */}
           <div className="flex flex-col gap-5">
@@ -94,10 +135,24 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             {/* Description */}
             {product.description && (
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1.5">Description</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1.5">About this product</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
               </div>
             )}
+
+            {/* Product details table */}
+            <div className="bg-muted rounded-lg overflow-hidden">
+              <div className="grid grid-cols-2 text-[12px]">
+                <div className="px-3 py-2 bg-muted/50 font-semibold text-muted-foreground border-b border-border">Category</div>
+                <div className="px-3 py-2 border-b border-border">{product.category ?? '—'}</div>
+                <div className="px-3 py-2 bg-muted/50 font-semibold text-muted-foreground border-b border-border">Availability</div>
+                <div className={`px-3 py-2 border-b border-border font-semibold ${product.inStock ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {product.inStock ? `In Stock (${product.stockCount ?? 0} units)` : 'Out of Stock'}
+                </div>
+                <div className="px-3 py-2 bg-muted/50 font-semibold text-muted-foreground">Price</div>
+                <div className="px-3 py-2 font-bold text-primary">PKR {product.pricePkr.toLocaleString()}</div>
+              </div>
+            </div>
 
             {/* Divider */}
             <div className="border-t border-border" />
@@ -119,7 +174,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
         {/* Related Products */}
         {related.length > 0 && (
-          <div>
+          <div className="border-t border-border pt-8">
             <h2 className="text-lg font-bold tracking-tight mb-4">You might also like</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {related.map((p) => (

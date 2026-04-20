@@ -13,14 +13,14 @@ import { Search, Plus, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 type Product = {
   id: string; name: string; slug: string; description: string | null;
-  price_pkr: number; image_url: string | null; video_url: string | null;
+  price_pkr: number; image_url: string | null; image_urls: string[] | null; video_url: string | null;
   in_stock: boolean; stock_count: number; category: string;
   featured: boolean; visible: boolean; created_at: string;
 };
 
 const EMPTY: Omit<Product, 'id' | 'created_at'> = {
   name: '', slug: '', description: '', price_pkr: 0, image_url: '',
-  video_url: '', in_stock: true, stock_count: 0, category: 'Milk',
+  image_urls: [], video_url: '', in_stock: true, stock_count: 0, category: 'Milk',
   featured: false, visible: false,
 };
 
@@ -47,7 +47,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
   function openEdit(p: Product) {
     setForm({
       name: p.name, slug: p.slug, description: p.description ?? '', price_pkr: p.price_pkr,
-      image_url: p.image_url ?? '', video_url: p.video_url ?? '', in_stock: p.in_stock,
+      image_url: p.image_url ?? '', image_urls: p.image_urls ?? [], video_url: p.video_url ?? '', in_stock: p.in_stock,
       stock_count: p.stock_count ?? 0, category: p.category ?? 'Milk',
       featured: p.featured ?? false, visible: p.visible ?? false,
     });
@@ -218,7 +218,14 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
                 </select>
               </div>
             </div>
-            <div className="grid gap-1.5"><Label>Image URL</Label><Input type="url" value={form.image_url ?? ''} onChange={e => f('image_url', e.target.value)} /></div>
+            <div className="grid gap-1.5"><Label>Primary Image URL</Label><Input type="url" placeholder="https://…" value={form.image_url ?? ''} onChange={e => f('image_url', e.target.value)} /></div>
+            <div className="grid gap-1.5">
+              <Label>Additional Images <span className="text-[11px] text-muted-foreground font-normal">(one URL per line, shown in gallery)</span></Label>
+              <textarea title="Additional image URLs" placeholder={"https://example.com/img2.jpg\nhttps://example.com/img3.jpg"}
+                className="flex min-h-[72px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring font-mono"
+                value={(form.image_urls ?? []).join('\n')}
+                onChange={e => setForm(prev => ({ ...prev, image_urls: e.target.value.split('\n').map(u => u.trim()).filter(Boolean) }))} />
+            </div>
             <div className="flex flex-col gap-3 pt-1 border-t border-border">
               <label className="flex items-center gap-3 cursor-pointer select-none">
                 <input type="checkbox" checked={form.featured ?? false} onChange={e => f('featured', e.target.checked)}
