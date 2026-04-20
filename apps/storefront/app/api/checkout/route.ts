@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
           offerId: offerId ?? '',
           offerUsedCount: String(offerUsedCount),
         },
-        successUrl: `${frontendUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        successUrl: `${frontendUrl}/checkout/success`,
         cancelUrl: `${frontendUrl}/checkout/cancelled`,
       });
 
