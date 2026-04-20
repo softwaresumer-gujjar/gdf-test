@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const frontendUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.gujjardairy.com').trim();
-const currency = (process.env.STRIPE_CURRENCY ?? 'pkr').toLowerCase();
+const currency = (process.env.STRIPE_CURRENCY ?? 'pkr').trim().toLowerCase();
 
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
