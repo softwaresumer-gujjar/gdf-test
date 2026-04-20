@@ -174,7 +174,8 @@ export async function POST(request: NextRequest) {
 
       if (stripeError) {
         console.error('[checkout] Stripe error:', stripeError);
-        return NextResponse.json({ error: `Payment setup failed: ${stripeError}` }, { status: 500 });
+        // Include debug info temporarily
+        return NextResponse.json({ error: `Payment setup failed: ${stripeError}`, debug_success_url: `${frontendUrl}/checkout/success` }, { status: 500 });
       }
 
       return NextResponse.json({ url });
