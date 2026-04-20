@@ -46,4 +46,30 @@
     line-height: 1.5;
   }
   a { color: inherit; text-decoration: none; }
+
+  /* ── Custom scrollbars — brand blue theme ── */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(213 30% 94%);     /* --muted */
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(213 76% 74%);     /* primary lightened */
+    border-radius: 999px;
+    border: 1px solid hsl(213 30% 94%);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(213 76% 46%);     /* --primary full strength */
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(213 76% 74%) hsl(213 30% 94%);
+  }
 }

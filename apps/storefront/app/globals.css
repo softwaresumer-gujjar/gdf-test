@@ -52,4 +52,30 @@
     font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     font-weight: 700;
   }
+
+  /* ── Custom scrollbars — brand blue theme ── */
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(213 40% 96%);     /* --muted */
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(213 76% 72%);     /* primary lightened */
+    border-radius: 999px;
+    border: 2px solid hsl(213 40% 96%);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(213 76% 46%);     /* --primary full strength */
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(213 76% 72%) hsl(213 40% 96%);
+  }
 }

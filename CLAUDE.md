@@ -104,7 +104,11 @@ Without this, Next.js may cache the page and serve stale data instead of fresh S
 - A customer can be a guest (no `profiles` row) — always use `customers` table for customer reporting
 - `is_admin()` function exists in Supabase (migration 003) — used by RLS policies
 - Service role bypasses RLS — safe for server-side admin operations
-- `products` table has a `featured BOOLEAN NOT NULL DEFAULT false` column (added via Management API) — used to show "Our Best" section on storefront
+- `products` table columns of note:
+  - `featured BOOLEAN NOT NULL DEFAULT false` — used to show "Our Best" section on storefront
+  - `visible BOOLEAN NOT NULL DEFAULT false` — controls whether product appears on storefront at all
+  - `image_url TEXT` — primary image URL
+  - `image_urls TEXT[] NOT NULL DEFAULT '{}'` — additional gallery images (shown in PDP carousel)
 - `offers` table columns: `code`, `discount_percentage`, `active`, `stock_limit`, `used_count`, `expires_at`
 
 ## Secrets Management — NEVER COMMIT SECRETS
@@ -120,10 +124,20 @@ Without this, Next.js may cache the page and serve stale data instead of fresh S
 - CLI is installed globally: `vercel --version`
 - Auth token stored at `%APPDATA%/com.vercel.cli/Data/auth.json`
 - Login: `vercel login` (opens browser)
-- Env vars: `vercel env add KEY production` or via Vercel REST API
-- Deploy storefront: `cd <repo-root> && vercel link --project gdf-storefront && vercel --prod`
-- Deploy admin: `cd <repo-root> && vercel link --project gdf-admin && vercel --prod`
+- Deploy storefront: `cd <repo-root> && vercel --prod`
+- Deploy admin: `cd <repo-root> && vercel --prod --cwd apps/admin`
 - Never hardcode keys in source files
+
+#### Adding Vercel env vars safely — CRITICAL
+**NEVER pipe via `echo`** — it appends a `\n` that silently corrupts the value:
+```bash
+# WRONG — trailing newline will break Stripe/URL validation:
+echo "https://www.gujjardairy.com" | vercel env add NEXT_PUBLIC_SITE_URL production
+
+# CORRECT — use printf (no trailing newline):
+printf "https://www.gujjardairy.com" | vercel env add NEXT_PUBLIC_SITE_URL production
+```
+After adding, always verify with `vercel env pull` or a live test request to confirm the value has no hidden characters.
 
 #### Vercel Project Config
 | Project | Vercel URL | Build Command | Output Dir |
@@ -172,13 +186,14 @@ Team ID: `team_PShJguBRgoIO4oWTH3DdWYbS`
 | `/login` | Client | Sign in page |
 | `/signup` | Client | Create account page |
 
-### API Routes (Fastify, port 4000)
+### API Routes (Next.js Route Handlers — inside storefront, no external server needed)
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/products` | All products (used by storefront homepage) |
-| `GET` | `/products/:id` | Single product by ID (used by PDP) |
-| `GET` | `/offers/validate?code=XXX` | Validate coupon code — returns `{ valid, discount_percentage, title }` or 404 |
-| `POST` | `/checkout` | Create Stripe session; accepts optional `couponCode`; applies % discount to all line items; increments `used_count` |
+| `POST` | `/api/checkout` | Create Stripe Checkout Session; accepts optional `couponCode`; applies % discount; increments `used_count` |
+| `GET` | `/api/locations` | Returns delivery locations from Supabase (falls back to hardcoded list) |
+| `GET` | `/api/offers/validate?code=XXX` | Validate coupon — returns `{ valid, discount_percentage, title }` or 404 |
+
+> **NOTE:** The external Fastify API server (`apps/api/`, port 4000) is NOT used in production. Storefront calls its own Next.js Route Handlers instead. The Fastify server only runs locally for dev convenience. Do NOT fetch from `NEXT_PUBLIC_API_URL` in production storefront code — query Supabase directly or use the internal `/api/*` routes.
 
 ### Shared UI Components
 | File | Used on |
@@ -187,6 +202,10 @@ Team ID: `team_PShJguBRgoIO4oWTH3DdWYbS`
 | `app/ui/page-header.tsx` | Checkout, login, signup, orders, cancelled, success — lightweight header |
 | `app/ui/footer.tsx` | All pages — 4-column footer with trust badges |
 | `app/ui/mini-cart.tsx` | Opened from Header — right-side sheet using `@radix-ui/react-dialog` |
+| `app/ui/pdp-image-gallery.tsx` | PDP — thumbnail strip + main image + lightbox zoom using `@radix-ui/react-dialog` |
+| `app/ui/featured-products.tsx` | Homepage — horizontal scroll carousels for Our Best / New Arrivals / Bestsellers |
+| `app/ui/category-grid.tsx` | Homepage — category filter pills; dispatches `gdf-category-select` custom event |
+| `app/ui/promo-strip.tsx` | Homepage — scrolling coupon code announcements from `offers` table |
 
 ### Cart Context
 `app/lib/cart-context.tsx` — React Context wrapping the entire app (wired in `layout.tsx`).
@@ -212,11 +231,18 @@ const { addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTot
 | `gdf-wishlist-update` | (no payload) | Fired after wishlist localStorage change so all components re-read it |
 
 ### Coupon / Offer Flow
-1. User enters code at checkout → `GET /offers/validate?code=XXX`
-2. API checks: `active=true`, code matches, not expired, under stock_limit
+1. User enters code at checkout → `GET /api/offers/validate?code=XXX`
+2. Route checks: `active=true`, code matches, not expired, under stock_limit
 3. Returns `{ valid: true, discount_percentage: 40, title: "WELCOME40" }`
 4. Checkout client shows discount breakdown and updated total
-5. On submit: `couponCode` sent in POST body → API applies discount to Stripe line items by multiplying `unit_amount * (1 - pct/100)` and increments `used_count`
+5. On submit: `couponCode` sent in POST body → `/api/checkout` applies discount by multiplying `unit_amount * (1 - pct/100)` on all Stripe line items and increments `used_count`
+
+### PDP (Product Detail Page) — `/products/[id]`
+- Server component — queries Supabase directly (service role key), NOT the external API
+- Image gallery: combines `image_url` (primary) + `image_urls[]` (additional) into one array, deduped
+- `PDPImageGallery` client component handles: thumbnail strip, prev/next on main image, lightbox zoom
+- Related products: same category, in-stock only, max 4
+- `TrackView` client component writes to `gdf_recently_viewed` localStorage on mount
 
 ### Header Strategy
 - **Full `<Header>`**: use on homepage (`page.tsx`) and PDP (`products/[id]/page.tsx`) — needs product list for search autocomplete
@@ -224,16 +250,35 @@ const { addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTot
 - Never add search autocomplete to PageHeader; it would require passing products to every page
 
 ## Common Mistakes to Avoid
-1. **Missing `force-dynamic`** → pages serve cached data from build time
-2. **Using anon key in server components** → RLS blocks data, silent empty results
-3. **`stripe listen` not running** → local webhooks never fire, orders not saved
-4. **`supabase db push --project-ref` flag** → not supported, use `--linked` or Management API
-5. **Committing `.env` files** → always check `.gitignore` before first commit
-6. **Modifying `customers` table manually** → it's managed by the Edge Function; totals auto-calculate
-7. **newsletter/offers RLS depends on `is_admin()`** → if function missing, these pages silently fail
-8. **Using raw localStorage for cart** → use CartContext (`useCart()`) instead; raw localStorage misses the enriched item data (name, price, image) needed by mini-cart
-9. **Using `<img>` without alt on product images** → use product name as alt text; emoji fallback for missing images
-10. **Adding `<Header>` to checkout/login/signup pages** → use `<PageHeader>` instead to avoid passing products everywhere and keep these pages lightweight
+
+### Data & API
+1. **Missing `force-dynamic`** → admin pages serve stale build-time cached data
+2. **Using anon key in server components** → RLS silently blocks data, returns empty arrays
+3. **Fetching from `NEXT_PUBLIC_API_URL` in storefront** → that's `localhost:4000` in production; query Supabase directly or use `/api/*` Route Handlers instead
+4. **`supabase db push --project-ref` flag** → not supported by this CLI version; use Management API `database/query` endpoint
+5. **Modifying `customers` table manually** → managed by the Edge Function; don't touch it directly
+6. **`newsletter`/`offers` RLS depends on `is_admin()`** → if that Supabase function is missing, these pages silently fail
+
+### Stripe
+7. **Vercel env vars set via `echo "value" | vercel env add`** → the newline from `echo` is included in the value, corrupting it (e.g. `pkr\n` fails currency validation, `https://…\n` fails URL validation). Always use `printf` without a newline, or the Vercel dashboard. **After adding any env var via CLI pipe, verify with `vercel env pull` or a test request.**
+8. **Using the Stripe Node.js SDK in Vercel serverless functions** → can cause `StripeConnectionError` with retries due to SDK network layer issues. Use direct `fetch` to `https://api.stripe.com/v1/…` with `Authorization: Bearer <key>` and `application/x-www-form-urlencoded` body instead.
+9. **`{CHECKOUT_SESSION_ID}` in success_url via `URLSearchParams`** → curly braces get encoded as `%7B`/`%7D`; Stripe may reject the URL. Build the form body manually or omit the placeholder.
+10. **`stripe listen` not running locally** → webhooks never fire, orders not saved in dev
+
+### UI & Patterns
+11. **Using raw localStorage for cart** → use `CartContext` (`useCart()`) instead; raw access misses name/price/image needed by mini-cart
+12. **Using `<img>` without `alt`** → use product name as alt; emoji `🥛` as fallback for missing images
+13. **Adding `<Header>` to checkout/login/signup/orders pages** → use `<PageHeader>` instead; full `<Header>` requires the products list prop for search autocomplete
+14. **Committing `.env` files** → all `.env*` files are in `.gitignore`; verify before first commit
+
+### Design Principles
+- **Card style:** white `bg-card`, border `border-border`, `rounded-lg` — consistent across both apps
+- **Brand colour:** `--primary` = `#1875D1` (hsl 213 76% 46%) — always use via CSS variable, never hardcoded hex
+- **Scrollbars:** custom thin scrollbars styled to brand blue via `globals.css` in both apps — do not override or add browser-default scrollbars
+- **Responsive breakpoints:** `sm` = 640px, `md` = 768px, `lg` = 1024px, `xl` = 1280px — mobile-first always
+- **Admin sidebar:** mobile = hamburger + slide-in drawer; desktop = fixed `md:flex` sidebar — do not collapse to icons
+- **Out-of-stock products:** show dark overlay on image + "Out of Stock" pill + red-bordered action area on all product cards (grid, list, mini-cards, PDP)
+- **Product visibility:** `visible=true` controls storefront display; `featured=true` controls "Our Best" section; both are admin-managed toggles
 
 ## Environment Variables Reference
 
