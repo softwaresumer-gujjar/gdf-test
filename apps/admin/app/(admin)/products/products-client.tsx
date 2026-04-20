@@ -9,20 +9,22 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Search, Plus, AlertCircle } from 'lucide-react';
+import { Search, Plus, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 type Product = {
   id: string; name: string; slug: string; description: string | null;
   price_pkr: number; image_url: string | null; video_url: string | null;
-  in_stock: boolean; stock_count: number; category: string; featured: boolean; created_at: string;
+  in_stock: boolean; stock_count: number; category: string;
+  featured: boolean; visible: boolean; created_at: string;
 };
 
 const EMPTY: Omit<Product, 'id' | 'created_at'> = {
   name: '', slug: '', description: '', price_pkr: 0, image_url: '',
-  video_url: '', in_stock: true, stock_count: 0, category: 'Milk', featured: false,
+  video_url: '', in_stock: true, stock_count: 0, category: 'Milk',
+  featured: false, visible: false,
 };
 
-const CATEGORIES = ['Milk', 'Yogurt', 'Cheese', 'Butter', 'Cream', 'Other'];
+const CATEGORIES = ['Milk', 'Yogurt', 'Cheese', 'Butter', 'Cream', 'Lassi', 'Other'];
 
 export default function ProductsClient({ initialProducts }: { initialProducts: Product[] }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -32,18 +34,37 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.category?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const visibleCount = products.filter(p => p.visible).length;
+
   function openAdd() { setForm(EMPTY); setEditId(null); setError(null); setModal('add'); }
   function openEdit(p: Product) {
-    setForm({ name: p.name, slug: p.slug, description: p.description ?? '', price_pkr: p.price_pkr,
+    setForm({
+      name: p.name, slug: p.slug, description: p.description ?? '', price_pkr: p.price_pkr,
       image_url: p.image_url ?? '', video_url: p.video_url ?? '', in_stock: p.in_stock,
-      stock_count: p.stock_count ?? 0, category: p.category ?? 'Milk', featured: p.featured ?? false });
+      stock_count: p.stock_count ?? 0, category: p.category ?? 'Milk',
+      featured: p.featured ?? false, visible: p.visible ?? false,
+    });
     setEditId(p.id); setError(null); setModal('edit');
+  }
+
+  async function toggleVisible(p: Product) {
+    setTogglingId(p.id);
+    const sb = createClient();
+    const { data, error: e } = await sb
+      .from('products')
+      .update({ visible: !p.visible })
+      .eq('id', p.id)
+      .select()
+      .single();
+    if (!e && data) setProducts(prev => prev.map(x => x.id === p.id ? data as Product : x));
+    setTogglingId(null);
   }
 
   async function save() {
@@ -73,10 +94,12 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Products</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{products.length} products</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {products.length} products &mdash; <span className="text-primary font-semibold">{visibleCount} visible</span> on storefront
+          </p>
         </div>
         <Button onClick={openAdd}><Plus size={16} />Add Product</Button>
       </div>
@@ -91,7 +114,16 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow><TableHead>Product</TableHead><TableHead>Category</TableHead><TableHead>Price</TableHead><TableHead>Stock</TableHead><TableHead>Status</TableHead><TableHead>Featured</TableHead><TableHead>Actions</TableHead></TableRow>
+              <TableRow>
+                <TableHead>Product</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Featured</TableHead>
+                <TableHead>Visible</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map(p => (
@@ -113,6 +145,22 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
                   <TableCell><Badge variant={p.in_stock ? 'active' : 'inactive'}>{p.in_stock ? 'In Stock' : 'Out of Stock'}</Badge></TableCell>
                   <TableCell>{p.featured ? <span className="text-amber-500 font-bold text-sm">⭐</span> : <span className="text-muted-foreground text-xs">—</span>}</TableCell>
                   <TableCell>
+                    <button
+                      type="button"
+                      title={p.visible ? 'Hide from storefront' : 'Show on storefront'}
+                      disabled={togglingId === p.id}
+                      onClick={() => void toggleVisible(p)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-semibold transition-colors disabled:opacity-50 ${
+                        p.visible
+                          ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                    >
+                      {p.visible ? <Eye size={13} /> : <EyeOff size={13} />}
+                      {p.visible ? 'Visible' : 'Hidden'}
+                    </button>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => openEdit(p)}>Edit</Button>
                       <Button variant="destructive" size="sm" onClick={() => void del(p.id)}>Del</Button>
@@ -121,7 +169,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
                 </TableRow>
               ))}
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No products found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No products found.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
@@ -171,12 +219,20 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
               </div>
             </div>
             <div className="grid gap-1.5"><Label>Image URL</Label><Input type="url" value={form.image_url ?? ''} onChange={e => f('image_url', e.target.value)} /></div>
-            <label className="flex items-center gap-3 cursor-pointer select-none">
-              <input type="checkbox" checked={form.featured ?? false} onChange={e => f('featured', e.target.checked)}
-                className="w-4 h-4 rounded accent-primary cursor-pointer" />
-              <span className="text-sm font-medium">⭐ Mark as Featured product</span>
-              <span className="text-[11px] text-muted-foreground">(shown in "Our Best" on storefront)</span>
-            </label>
+            <div className="flex flex-col gap-3 pt-1 border-t border-border">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input type="checkbox" checked={form.featured ?? false} onChange={e => f('featured', e.target.checked)}
+                  className="w-4 h-4 rounded accent-primary cursor-pointer" />
+                <span className="text-sm font-medium">⭐ Mark as Featured</span>
+                <span className="text-[11px] text-muted-foreground">(shown in "Our Best")</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <input type="checkbox" checked={form.visible ?? false} onChange={e => f('visible', e.target.checked)}
+                  className="w-4 h-4 rounded accent-primary cursor-pointer" />
+                <span className="text-sm font-medium">👁 Show on storefront</span>
+                <span className="text-[11px] text-muted-foreground">(visible to customers)</span>
+              </label>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setModal(null)}>Cancel</Button>

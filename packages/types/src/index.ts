@@ -18,6 +18,7 @@ export interface Product {
   category?: string;
   stockCount?: number;
   featured?: boolean;
+  visible?: boolean;
   createdAt?: string;
 }
 

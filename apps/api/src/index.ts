@@ -38,11 +38,12 @@ function mapProduct(row: Record<string, unknown>): Product {
     category: (row.category as string) ?? 'Milk',
     stockCount: (row.stock_count as number) ?? 0,
     featured: (row.featured as boolean) ?? false,
+    visible: (row.visible as boolean) ?? false,
     createdAt: row.created_at as string,
   };
 }
 
-const PRODUCT_SELECT = 'id, name, slug, description, price_pkr, image_url, in_stock, category, stock_count, featured, created_at';
+const PRODUCT_SELECT = 'id, name, slug, description, price_pkr, image_url, in_stock, category, stock_count, featured, visible, created_at';
 
 async function getLocations(): Promise<LocationOption[]> {
   if (!supabaseAdmin) return staticLocations.filter((l) => l.active);
@@ -60,6 +61,7 @@ async function getProducts(): Promise<Product[]> {
     .from('products')
     .select(PRODUCT_SELECT)
     .eq('in_stock', true)
+    .eq('visible', true)
     .order('created_at', { ascending: false });
   if (error || !data?.length) return staticProducts.filter((p) => p.inStock);
   return data.map(mapProduct);
