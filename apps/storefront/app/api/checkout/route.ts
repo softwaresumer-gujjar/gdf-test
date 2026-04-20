@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const frontendUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.gujjardairy.com';
+const frontendUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.gujjardairy.com').trim();
 const currency = (process.env.STRIPE_CURRENCY ?? 'pkr').toLowerCase();
 
 function adminClient() {
@@ -174,8 +174,7 @@ export async function POST(request: NextRequest) {
 
       if (stripeError) {
         console.error('[checkout] Stripe error:', stripeError);
-        // Include debug info temporarily
-        return NextResponse.json({ error: `Payment setup failed: ${stripeError}`, debug_success_url: `${frontendUrl}/checkout/success` }, { status: 500 });
+        return NextResponse.json({ error: `Payment setup failed: ${stripeError}` }, { status: 500 });
       }
 
       return NextResponse.json({ url });
