@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import Stripe from 'stripe';
 
 const frontendUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.gujjardairy.com';
-const currency = process.env.STRIPE_CURRENCY ?? 'pkr';
+const currency = (process.env.STRIPE_CURRENCY ?? 'pkr').toLowerCase();
 
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -12,13 +11,52 @@ function adminClient() {
   return createClient(url, key);
 }
 
-function stripeClient() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) return null;
-  return new Stripe(key);
-}
-
 interface CartItem { productId: string; quantity: number; }
+
+// Create a Stripe Checkout Session via direct REST API call (avoids SDK issues in serverless)
+async function createStripeSession(params: {
+  stripeKey: string;
+  customerEmail: string;
+  lineItems: Array<{ name: string; description?: string; unitAmount: number; quantity: number }>;
+  metadata: Record<string, string>;
+  successUrl: string;
+  cancelUrl: string;
+}): Promise<{ url: string | null; error?: string }> {
+  const body = new URLSearchParams();
+  body.append('mode', 'payment');
+  body.append('customer_email', params.customerEmail);
+  body.append('success_url', params.successUrl);
+  body.append('cancel_url', params.cancelUrl);
+
+  params.lineItems.forEach((item, i) => {
+    body.append(`line_items[${i}][price_data][currency]`, currency);
+    body.append(`line_items[${i}][price_data][unit_amount]`, String(item.unitAmount));
+    body.append(`line_items[${i}][price_data][product_data][name]`, item.name);
+    if (item.description) {
+      body.append(`line_items[${i}][price_data][product_data][description]`, item.description);
+    }
+    body.append(`line_items[${i}][quantity]`, String(item.quantity));
+  });
+
+  for (const [k, v] of Object.entries(params.metadata)) {
+    body.append(`metadata[${k}]`, v);
+  }
+
+  const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${params.stripeKey}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  });
+
+  const data = (await res.json()) as { url?: string; error?: { message?: string } };
+  if (!res.ok) {
+    return { url: null, error: data.error?.message ?? `Stripe error ${res.status}` };
+  }
+  return { url: data.url ?? null };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,51 +70,46 @@ export async function POST(request: NextRequest) {
     }
 
     const sb = adminClient();
-    const stripe = stripeClient();
-
-    // Resolve products from Supabase
-    const productIds = items.map((i) => i.productId);
-    let productsMap: Record<string, { id: string; name: string; description: string; pricePkr: number }> = {};
-
-    if (sb) {
-      const { data, error: dbError } = await sb
-        .from('products')
-        .select('id, name, description, price_pkr')
-        .in('id', productIds)
-        .eq('in_stock', true);
-      if (dbError) {
-        console.error('[checkout] Supabase product fetch error:', dbError);
-        return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
-      }
-      if (data?.length) {
-        for (const p of data) {
-          productsMap[p.id as string] = {
-            id: p.id as string,
-            name: p.name as string,
-            description: (p.description as string) ?? '',
-            pricePkr: p.price_pkr as number,
-          };
-        }
-      }
-    } else {
+    if (!sb) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
-    // Build line items
+    // Resolve products from Supabase
+    const productIds = items.map((i) => i.productId);
+    const { data: productRows, error: dbError } = await sb
+      .from('products')
+      .select('id, name, description, price_pkr')
+      .in('id', productIds)
+      .eq('in_stock', true);
+
+    if (dbError) {
+      console.error('[checkout] Supabase product fetch error:', dbError.message);
+      return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+    }
+
+    const productsMap: Record<string, { id: string; name: string; description: string; pricePkr: number }> = {};
+    for (const p of (productRows ?? [])) {
+      productsMap[p.id as string] = {
+        id: p.id as string,
+        name: p.name as string,
+        description: (p.description as string) ?? '',
+        pricePkr: p.price_pkr as number,
+      };
+    }
+
+    // Build order snapshot
     type Snapshot = { productId: string; productName: string; quantity: number; unitPricePkr: number };
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
     const itemsSnapshot: Snapshot[] = [];
+    const lineItems: Array<{ name: string; description?: string; unitAmount: number; quantity: number }> = [];
 
     for (const item of items) {
       const product = productsMap[item.productId];
       if (!product) return NextResponse.json({ error: `Invalid product: ${item.productId}` }, { status: 400 });
       itemsSnapshot.push({ productId: product.id, productName: product.name, quantity: item.quantity, unitPricePkr: product.pricePkr });
       lineItems.push({
-        price_data: {
-          currency,
-          product_data: { name: product.name, description: product.description || undefined },
-          unit_amount: product.pricePkr * 100,
-        },
+        name: product.name,
+        description: product.description || undefined,
+        unitAmount: product.pricePkr * 100,
         quantity: item.quantity,
       });
     }
@@ -86,7 +119,7 @@ export async function POST(request: NextRequest) {
     let offerId: string | null = null;
     let offerUsedCount = 0;
 
-    if (couponCode && sb) {
+    if (couponCode) {
       const now = new Date().toISOString();
       const { data: offer } = await sb
         .from('offers')
@@ -108,36 +141,34 @@ export async function POST(request: NextRequest) {
 
     if (discountPct > 0) {
       const mul = 1 - discountPct / 100;
-      for (const li of lineItems) {
-        const pd = li.price_data as Stripe.Checkout.SessionCreateParams.LineItem.PriceData;
-        pd.unit_amount = Math.round((pd.unit_amount as number) * mul);
-      }
+      for (const li of lineItems) li.unitAmount = Math.round(li.unitAmount * mul);
       for (const snap of itemsSnapshot) snap.unitPricePkr = Math.round(snap.unitPricePkr * (1 - discountPct / 100));
     }
 
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+
     // Stripe path
-    if (stripe) {
-      let session: Stripe.Checkout.Session;
-      try {
-        session = await stripe.checkout.sessions.create({
-          mode: 'payment',
-          customer_email: customerEmail,
-          success_url: `${frontendUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${frontendUrl}/checkout/cancelled`,
-          line_items: lineItems,
-          metadata: {
-            locationId,
-            itemsJson: JSON.stringify(itemsSnapshot),
-            offerId: offerId ?? '',
-            offerUsedCount: String(offerUsedCount),
-          },
-        });
-      } catch (stripeErr) {
-        const msg = stripeErr instanceof Error ? stripeErr.message : String(stripeErr);
-        console.error('[checkout] Stripe error:', msg);
-        return NextResponse.json({ error: `Payment setup failed: ${msg}` }, { status: 500 });
+    if (stripeKey) {
+      const { url, error: stripeError } = await createStripeSession({
+        stripeKey,
+        customerEmail,
+        lineItems,
+        metadata: {
+          locationId,
+          itemsJson: JSON.stringify(itemsSnapshot),
+          offerId: offerId ?? '',
+          offerUsedCount: String(offerUsedCount),
+        },
+        successUrl: `${frontendUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${frontendUrl}/checkout/cancelled`,
+      });
+
+      if (stripeError) {
+        console.error('[checkout] Stripe error:', stripeError);
+        return NextResponse.json({ error: `Payment setup failed: ${stripeError}` }, { status: 500 });
       }
-      return NextResponse.json({ url: session.url });
+
+      return NextResponse.json({ url });
     }
 
     // Mock path (no Stripe configured)
