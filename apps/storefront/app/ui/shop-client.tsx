@@ -263,18 +263,30 @@ function ProductCard({ product, wishlisted, onWishlist }: { product: Product; wi
   }
 
   return (
-    <div className="group bg-card border border-border rounded-lg overflow-hidden hover:shadow-md hover:border-primary/30 transition-all duration-200">
+    <div className={`group bg-card border rounded-lg overflow-hidden transition-all duration-200 ${
+      product.inStock
+        ? 'border-border hover:shadow-md hover:border-primary/30'
+        : 'border-destructive/30 opacity-80'
+    }`}>
       <Link href={`/products/${product.id}`}>
         <div className="relative bg-muted h-40 flex items-center justify-center overflow-hidden">
           {product.imageUrl
-            ? <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            ? <img src={product.imageUrl} alt={product.name} className={`w-full h-full object-cover transition-transform duration-300 ${product.inStock ? 'group-hover:scale-105' : 'grayscale-[30%]'}`} />
             : <span className="text-5xl select-none">🥛</span>}
-          <div className="absolute top-2 left-2">
-            {product.inStock
-              ? <span className="bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-0.5 rounded-full">Fresh</span>
-              : <span className="bg-destructive text-destructive-foreground text-[10px] font-bold px-2.5 py-0.5 rounded-full">Out</span>}
-          </div>
-          {product.featured && (
+          {/* Out of stock overlay */}
+          {!product.inStock && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <span className="bg-destructive text-destructive-foreground text-[11px] font-black px-3 py-1 rounded-full tracking-wide uppercase shadow">
+                Out of Stock
+              </span>
+            </div>
+          )}
+          {product.inStock && (
+            <div className="absolute top-2 left-2">
+              <span className="bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-0.5 rounded-full">Fresh</span>
+            </div>
+          )}
+          {product.featured && product.inStock && (
             <div className="absolute top-2 right-2">
               <span className="bg-amber-400 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full">⭐ Best</span>
             </div>
@@ -285,7 +297,9 @@ function ProductCard({ product, wishlisted, onWishlist }: { product: Product; wi
           {product.description && (
             <p className="text-[11px] text-muted-foreground truncate mt-0.5">{product.description}</p>
           )}
-          <p className="font-bold text-primary text-sm mt-2">PKR {product.pricePkr.toLocaleString()}</p>
+          <p className={`font-bold text-sm mt-2 ${product.inStock ? 'text-primary' : 'text-muted-foreground'}`}>
+            PKR {product.pricePkr.toLocaleString()}
+          </p>
         </div>
       </Link>
       <div className="px-3 pb-3 flex items-center gap-2">
@@ -297,7 +311,9 @@ function ProductCard({ product, wishlisted, onWishlist }: { product: Product; wi
             {added ? '✓ Added' : '+ Cart'}
           </button>
         ) : (
-          <span className="flex-1 text-[11px] text-muted-foreground text-center py-1.5">Out of Stock</span>
+          <span className="flex-1 text-[11px] font-bold text-destructive text-center py-1.5 bg-destructive/10 rounded-md border border-destructive/20">
+            Out of Stock
+          </span>
         )}
         <button type="button" title={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'} onClick={onWishlist}
           className={`w-8 h-8 rounded-md border flex items-center justify-center transition-colors ${
@@ -322,22 +338,32 @@ function ProductListRow({ product, wishlisted, onWishlist }: { product: Product;
   }
 
   return (
-    <div className="group bg-card border border-border rounded-lg overflow-hidden hover:shadow-md hover:border-primary/30 transition-all flex">
+    <div className={`group bg-card border rounded-lg overflow-hidden transition-all flex ${
+      product.inStock ? 'border-border hover:shadow-md hover:border-primary/30' : 'border-destructive/30 opacity-80'
+    }`}>
       <Link href={`/products/${product.id}`} className="flex items-center gap-4 flex-1 p-4">
-        <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+        <div className="relative w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden shrink-0">
           {product.imageUrl
-            ? <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+            ? <img src={product.imageUrl} alt={product.name} className={`w-full h-full object-cover ${!product.inStock ? 'grayscale-[30%]' : ''}`} />
             : <span className="text-2xl">🥛</span>}
+          {!product.inStock && (
+            <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
+              <span className="text-white text-[8px] font-black text-center leading-tight px-1">OUT OF<br/>STOCK</span>
+            </div>
+          )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className="text-[14px] font-semibold text-foreground truncate">{product.name}</p>
-            {product.featured && <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">⭐ Best</span>}
+            {product.featured && product.inStock && <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">⭐ Best</span>}
+            {!product.inStock && <span className="bg-destructive/10 text-destructive text-[10px] font-bold px-2 py-0.5 rounded-full border border-destructive/20">Out of Stock</span>}
           </div>
           <p className="text-[12px] text-muted-foreground mt-0.5">{product.category}</p>
           {product.description && <p className="text-[12px] text-muted-foreground mt-1 line-clamp-1">{product.description}</p>}
         </div>
-        <p className="font-bold text-primary text-sm shrink-0 mr-4">PKR {product.pricePkr.toLocaleString()}</p>
+        <p className={`font-bold text-sm shrink-0 mr-4 ${product.inStock ? 'text-primary' : 'text-muted-foreground'}`}>
+          PKR {product.pricePkr.toLocaleString()}
+        </p>
       </Link>
       <div className="flex flex-col gap-2 justify-center pr-4">
         {product.inStock ? (
@@ -348,7 +374,7 @@ function ProductListRow({ product, wishlisted, onWishlist }: { product: Product;
             {added ? '✓' : '+ Cart'}
           </button>
         ) : (
-          <span className="text-[11px] text-muted-foreground px-3">Out</span>
+          <span className="text-[10px] font-bold text-destructive px-2 py-1 bg-destructive/10 rounded-md border border-destructive/20 text-center">Sold Out</span>
         )}
         <button type="button" title={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'} onClick={onWishlist}
           className={`w-8 h-8 rounded-md border flex items-center justify-center transition-colors mx-auto ${

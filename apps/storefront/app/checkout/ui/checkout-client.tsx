@@ -8,7 +8,7 @@ import { createClient } from '../../lib/supabase/client';
 import { AlertCircle, ShoppingCart, Tag, X, CheckCircle } from 'lucide-react';
 import { useCart } from '../../lib/cart-context';
 
-const apiUrl = '';
+const apiUrl = '/api';
 
 interface AppliedCoupon {
   code: string;

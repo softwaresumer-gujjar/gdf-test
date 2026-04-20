@@ -24,26 +24,37 @@ function MiniProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <div className="group bg-card border border-border rounded-lg overflow-hidden hover:shadow-md hover:border-primary/30 transition-all duration-200 shrink-0 w-44">
+    <div className={`group bg-card border rounded-lg overflow-hidden transition-all duration-200 shrink-0 w-44 ${
+      product.inStock ? 'border-border hover:shadow-md hover:border-primary/30' : 'border-destructive/30 opacity-80'
+    }`}>
       <Link href={`/products/${product.id}`}>
         <div className="relative bg-muted h-36 flex items-center justify-center overflow-hidden">
           {product.imageUrl
-            ? <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            ? <img src={product.imageUrl} alt={product.name} className={`w-full h-full object-cover transition-transform duration-300 ${product.inStock ? 'group-hover:scale-105' : 'grayscale-[30%]'}`} />
             : <span className="text-4xl select-none">🥛</span>}
-          <div className="absolute top-2 left-2">
-            {product.inStock
-              ? <span className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">Fresh</span>
-              : <span className="bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">Out</span>}
-          </div>
+          {!product.inStock && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <span className="bg-destructive text-destructive-foreground text-[10px] font-black px-2.5 py-1 rounded-full tracking-wide uppercase shadow">
+                Out of Stock
+              </span>
+            </div>
+          )}
+          {product.inStock && (
+            <div className="absolute top-2 left-2">
+              <span className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">Fresh</span>
+            </div>
+          )}
         </div>
         <div className="p-3">
           <p className="text-[13px] font-semibold text-foreground truncate">{product.name}</p>
           <p className="text-[11px] text-muted-foreground mt-0.5">{product.category}</p>
-          <p className="font-bold text-primary text-sm mt-1.5">PKR {product.pricePkr.toLocaleString()}</p>
+          <p className={`font-bold text-sm mt-1.5 ${product.inStock ? 'text-primary' : 'text-muted-foreground'}`}>
+            PKR {product.pricePkr.toLocaleString()}
+          </p>
         </div>
       </Link>
-      {product.inStock && (
-        <div className="px-3 pb-3">
+      <div className="px-3 pb-3">
+        {product.inStock ? (
           <button
             type="button"
             onClick={handleAdd}
@@ -53,8 +64,12 @@ function MiniProductCard({ product }: { product: Product }) {
           >
             {added ? '✓ Added' : '+ Cart'}
           </button>
-        </div>
-      )}
+        ) : (
+          <span className="block w-full text-[11px] font-bold text-destructive text-center py-1.5 bg-destructive/10 rounded-md border border-destructive/20">
+            Out of Stock
+          </span>
+        )}
+      </div>
     </div>
   );
 }
