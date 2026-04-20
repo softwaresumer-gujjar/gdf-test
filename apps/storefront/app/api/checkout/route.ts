@@ -13,6 +13,12 @@ function adminClient() {
 
 interface CartItem { productId: string; quantity: number; }
 
+// Encode a key=value pair for application/x-www-form-urlencoded without encoding the value's content
+// (Stripe template placeholders like {CHECKOUT_SESSION_ID} must NOT be percent-encoded)
+function enc(key: string, value: string): string {
+  return `${encodeURIComponent(key)}=${value.replace(/[^A-Za-z0-9\-_.!~*'(){}:/?#\[\]@!$&'()*+,;=%]/g, encodeURIComponent)}`;
+}
+
 // Create a Stripe Checkout Session via direct REST API call (avoids SDK issues in serverless)
 async function createStripeSession(params: {
   stripeKey: string;
@@ -22,24 +28,25 @@ async function createStripeSession(params: {
   successUrl: string;
   cancelUrl: string;
 }): Promise<{ url: string | null; error?: string }> {
-  const body = new URLSearchParams();
-  body.append('mode', 'payment');
-  body.append('customer_email', params.customerEmail);
-  body.append('success_url', params.successUrl);
-  body.append('cancel_url', params.cancelUrl);
+  const pairs: string[] = [
+    `mode=payment`,
+    `${enc('customer_email', params.customerEmail)}`,
+    `${enc('success_url', params.successUrl)}`,
+    `${enc('cancel_url', params.cancelUrl)}`,
+  ];
 
   params.lineItems.forEach((item, i) => {
-    body.append(`line_items[${i}][price_data][currency]`, currency);
-    body.append(`line_items[${i}][price_data][unit_amount]`, String(item.unitAmount));
-    body.append(`line_items[${i}][price_data][product_data][name]`, item.name);
+    pairs.push(`line_items%5B${i}%5D%5Bprice_data%5D%5Bcurrency%5D=${encodeURIComponent(currency)}`);
+    pairs.push(`line_items%5B${i}%5D%5Bprice_data%5D%5Bunit_amount%5D=${item.unitAmount}`);
+    pairs.push(`line_items%5B${i}%5D%5Bprice_data%5D%5Bproduct_data%5D%5Bname%5D=${encodeURIComponent(item.name)}`);
     if (item.description) {
-      body.append(`line_items[${i}][price_data][product_data][description]`, item.description);
+      pairs.push(`line_items%5B${i}%5D%5Bprice_data%5D%5Bproduct_data%5D%5Bdescription%5D=${encodeURIComponent(item.description)}`);
     }
-    body.append(`line_items[${i}][quantity]`, String(item.quantity));
+    pairs.push(`line_items%5B${i}%5D%5Bquantity%5D=${item.quantity}`);
   });
 
   for (const [k, v] of Object.entries(params.metadata)) {
-    body.append(`metadata[${k}]`, v);
+    pairs.push(`metadata%5B${encodeURIComponent(k)}%5D=${encodeURIComponent(v)}`);
   }
 
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
@@ -48,12 +55,14 @@ async function createStripeSession(params: {
       'Authorization': `Bearer ${params.stripeKey}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: body.toString(),
+    body: pairs.join('&'),
   });
 
-  const data = (await res.json()) as { url?: string; error?: { message?: string } };
+  const data = (await res.json()) as { url?: string; error?: { message?: string; param?: string } };
   if (!res.ok) {
-    return { url: null, error: data.error?.message ?? `Stripe error ${res.status}` };
+    const errMsg = data.error?.message ?? `Stripe error ${res.status}`;
+    const errParam = data.error?.param ? ` (param: ${data.error.param})` : '';
+    return { url: null, error: errMsg + errParam };
   }
   return { url: data.url ?? null };
 }
