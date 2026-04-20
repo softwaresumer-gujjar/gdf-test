@@ -1,11 +1,9 @@
 import type { Product } from '@packages/types';
 import { Header } from './ui/header';
 import { Footer } from './ui/footer';
-import { HeroSection } from './ui/hero-section';
 import { PromoStrip } from './ui/promo-strip';
 import { CategoryGrid } from './ui/category-grid';
 import { ProductSection } from './ui/featured-products';
-import { TrustSection } from './ui/trust-section';
 import { ShopClient } from './ui/shop-client';
 import { fallbackProducts } from './lib/fallback-data';
 import { createClient } from './lib/supabase/server';
@@ -62,11 +60,15 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <Header products={products} userEmail={user?.email ?? null} />
-      <HeroSection />
       <PromoStrip offers={activeOffers} />
 
       <div className="max-w-screen-xl mx-auto px-4">
         <CategoryGrid />
+
+        {/* Full catalog — All Products */}
+        <section id="catalog">
+          <ShopClient products={products} userEmail={user?.email ?? null} />
+        </section>
 
         {featured.length > 0 && (
           <ProductSection
@@ -92,13 +94,6 @@ export default async function HomePage() {
             viewAllHref="#catalog"
           />
         )}
-
-        <TrustSection />
-
-        {/* Full catalog */}
-        <section id="catalog">
-          <ShopClient products={products} userEmail={user?.email ?? null} />
-        </section>
       </div>
 
       <Footer />

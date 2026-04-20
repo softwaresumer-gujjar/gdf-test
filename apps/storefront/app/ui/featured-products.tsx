@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product } from '@packages/types';
 import { useCart } from '../lib/cart-context';
 
@@ -59,6 +60,35 @@ function MiniProductCard({ product }: { product: Product }) {
 }
 
 export function ProductSection({ title, subtitle, products, viewAllHref }: SectionProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  function updateScrollState() {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }
+
+  useEffect(() => {
+    updateScrollState();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    window.addEventListener('resize', updateScrollState);
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      window.removeEventListener('resize', updateScrollState);
+    };
+  }, [products]);
+
+  function scroll(dir: 'left' | 'right') {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === 'right' ? 360 : -360, behavior: 'smooth' });
+  }
+
   if (!products.length) return null;
 
   return (
@@ -68,13 +98,39 @@ export function ProductSection({ title, subtitle, products, viewAllHref }: Secti
           <h2 className="text-lg font-bold tracking-tight">{title}</h2>
           {subtitle && <p className="text-[12px] text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
-        {viewAllHref && (
-          <a href={viewAllHref} className="text-[12px] text-primary font-semibold hover:underline">
-            View all →
-          </a>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Scroll arrows */}
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={() => scroll('left')}
+              disabled={!canScrollLeft}
+              className="w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={() => scroll('right')}
+              disabled={!canScrollRight}
+              className="w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              aria-label="Scroll right"
+            >
+              <ChevronRight size={15} />
+            </button>
+          </div>
+          {viewAllHref && (
+            <a href={viewAllHref} className="text-[12px] text-primary font-semibold hover:underline">
+              View all →
+            </a>
+          )}
+        </div>
       </div>
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+      <div
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto pb-2 scroll-smooth scrollbar-hide"
+      >
         {products.map((p) => (
           <MiniProductCard key={p.id} product={p} />
         ))}

@@ -139,7 +139,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
             </div>
           )}
           <div className="grid gap-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-1.5"><Label>Name</Label><Input value={form.name} onChange={e => f('name', e.target.value)} /></div>
               <div className="grid gap-1.5"><Label>Slug</Label><Input value={form.slug} onChange={e => f('slug', e.target.value)} /></div>
             </div>
@@ -149,11 +149,11 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
                 className="flex min-h-[72px] w-full rounded-lg border border-input bg-card px-3 py-2 text-sm resize-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={form.description ?? ''} onChange={e => f('description', e.target.value)} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-1.5"><Label>Price (PKR)</Label><Input type="number" value={form.price_pkr} onChange={e => f('price_pkr', Number(e.target.value))} /></div>
               <div className="grid gap-1.5"><Label>Stock Count</Label><Input type="number" value={form.stock_count} onChange={e => f('stock_count', Number(e.target.value))} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label>Category</Label>
                 <select title="Category" className="flex h-9 w-full rounded-lg border border-input bg-card px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
